@@ -234,12 +234,14 @@ function receivedMessage(event) {
 
 
     }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
-<<<<<<< HEAD
-      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=first_name,last_name,profile_pic&access_token=EAACFAbvTl7wBAJPieDiAG75ZCTXxBt7jZBuS2M1ym0GeTNf35E0Me3OdZAqLks6oYGFX33IWKwowbdzZCKtATFux5Kp3rtHKPUPpI3Lsu878NzvHPV5Rzw891yyZBp5pLyYDoRg6lCqkk1SlJoZBoiziptdTcIWmCbCWApQ9XNwgZDZD" ;
+
+      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=&access_token=EAACFAbvTl7wBAJPieDiAG75ZCTXxBt7jZBuS2M1ym0GeTNf35E0Me3OdZAqLks6oYGFX33IWKwowbdzZCKtATFux5Kp3rtHKPUPpI3Lsu878NzvHPV5Rzw891yyZBp5pLyYDoRg6lCqkk1SlJoZBoiziptdTcIWmCbCWApQ9XNwgZDZD" ;
       request(url, function(err, response, body){
         if (!error && response.statusCode==200){
           var parsedResults = JSON.parse(body);
-         console.log(parsedResults);
+         console.log(parsedResults.name);
+         }else{
+           console.log(error);
          }
      })
       }
