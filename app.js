@@ -223,10 +223,13 @@ function receivedMessage(event) {
 
   var messageText = message.text;
   if (messageText) {
-
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
+    }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
+      app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function(req, res){
+      sendTextmessage(senderID, messageGreeting);
+      })
     }
 
     //var lcm = messageText.toLowerCase();
@@ -260,12 +263,12 @@ function sendHelpOptionsAsButtonTemplates(recipientId) {
         type: "template",
         payload: {
           template_type: "button",
-          text: "Click the button before to get a list of 3 of our products.",
+          text: "Click the button before to get a list of 5 of our products.",
           buttons: [
             {
               "type": "postback",
               "title": "Get 3 products",
-              "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 3 })
+              "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 5 })
             }
             // limit of three buttons 
           ]
