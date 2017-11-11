@@ -233,13 +233,17 @@ function receivedMessage(event) {
       sendHelpOptionsAsButtonTemplates(senderID);
 
     }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
-      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=first_name,last_name,profile_pic&access_token=<PAGE_ACCESS_TOKEN>";
-    
+      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=first_name,last_name,profile_pic&access_token=EAACFAbvTl7wBAJPieDiAG75ZCTXxBt7jZBuS2M1ym0GeTNf35E0Me3OdZAqLks6oYGFX33IWKwowbdzZCKtATFux5Kp3rtHKPUPpI3Lsu878NzvHPV5Rzw891yyZBp5pLyYDoRg6lCqkk1SlJoZBoiziptdTcIWmCbCWApQ9XNwgZDZD" ;
+      request(url, function(err, response, body){
+        if (!error && response.statusCode==200){
+          var parsedResults = JSON.parse(body);
+         console.log(parsedResults);
+         }
+     })
+      }
       console.log(url);
     }
-    https.request(options, function (res) {
-      sendTextmessage(senderID, JSON.stringify(res))
-    })
+    
 
     //var lcm = messageText.toLowerCase();
     switch (messageText) {
@@ -259,9 +263,7 @@ function receivedMessage(event) {
 }
 
 
-app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function(req, res){
-  var asasfa = 'https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN;
-sendTextmessage(senderID, messageGreeting);
+
 /*
  * Send a message with buttons.
  *
