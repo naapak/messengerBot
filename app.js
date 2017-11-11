@@ -240,40 +240,33 @@ function receivedMessage(event) {
       })
     }
 
-    }
+  }
 
+  const greetings = firstEntity(message.nlp, 'greetings')
+  if (greetings && greetings.confidence > 0.8) {
+    const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
+      var data = JSON.parse(body);
+      sendTextMessage(senderID, 'Hey ' + data.first_name);
+    });
+  }
 
-<<<<<<< HEAD
-=======
-    }
+  //var lcm = messageText.toLowerCase();
+  switch (messageText) {
+    // if the text matches any special keywords, handle them accordingly
+    case 'help':
+      sendHelpOptionsAsButtonTemplates(senderID);
+      break;
 
->>>>>>> master
-    const greetings = firstEntity(message.nlp, 'greetings')
-    if (greetings && greetings.confidence > 0.8) {
-      const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
-        var data = JSON.parse(body);
-        sendTextMessage(senderID, 'Hey ' + data.first_name);
-      });
-    }
-
-    //var lcm = messageText.toLowerCase();
-    switch (messageText) {
-      // if the text matches any special keywords, handle them accordingly
-      case 'help':
-        sendHelpOptionsAsButtonTemplates(senderID);
-        break;
-
-      default:
-        // otherwise, just echo it back to the sender
-        sendTextMessage(senderID, JSON.stringify(message.nlp));
-        sendTextMessage(senderID, JSON.stringify(message));
-        sendTextMessage(senderID, messageText)
-
-    }
-
-    //SHOP API
+    default:
+      // otherwise, just echo it back to the sender
+      sendTextMessage(senderID, JSON.stringify(message.nlp));
+      sendTextMessage(senderID, JSON.stringify(message));
+      sendTextMessage(senderID, messageText)
 
   }
+
+  //SHOP API
+
 }
 
 /*
