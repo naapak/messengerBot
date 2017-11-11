@@ -213,7 +213,7 @@ function receivedMessage(event) {
     method: 'GET',
     path: '/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN
   };
-  const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/";
+  const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/shop.json";
 
   console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
     senderID, pageID, timeOfMessage, JSON.stringify(message));
@@ -234,13 +234,9 @@ function receivedMessage(event) {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
-      const shopInfo = request(ShopUrl + 'shop.json', function (error, response, body) {
-        var shopInfoParsed = JSON.parse(body);
-        sendTextMessage(senderID, body);
-      })
+      shopify.location.list().then(
+        (location) => { sendTextMessage(senderID, location[0].address1); });
     }
-
-<<<<<<< Updated upstream
   }
 
   const greetings = firstEntity(message.nlp, 'greetings')
@@ -250,19 +246,6 @@ function receivedMessage(event) {
       sendTextMessage(senderID, 'Hey ' + data.first_name);
     });
   }
-=======
-    }
-
-    }
-
-    const greetings = firstEntity(message.nlp, 'greetings')
-    if (greetings && greetings.confidence > 0.8) {
-      const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
-        var data = JSON.parse(body);
-        sendTextMessage(senderID, 'Hey ' + data.first_name);
-      });
-    }
->>>>>>> Stashed changes
 
   //var lcm = messageText.toLowerCase();
   switch (messageText) {
