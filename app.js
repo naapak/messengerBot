@@ -231,12 +231,11 @@ function receivedMessage(event) {
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
-<<<<<<< HEAD
-=======
+
     }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
-      var url = app.get("https://graph.facebook.com/v2.6/" + senderID +  "?fields=first_name,last_name,profile_pic&access_token=<PAGE_ACCESS_TOKEN>");
+      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=first_name,last_name,profile_pic&access_token=<PAGE_ACCESS_TOKEN>";
+    
       console.log(url);
->>>>>>> ead9e9fbf0926407dae2c6f87bb2fac8c839dc08
     }
     https.request(options, function (res) {
       sendTextmessage(senderID, JSON.stringify(res))
