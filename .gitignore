@@ -53,4 +53,5 @@ jspm_packages
 .env
 
 config
+default.json
 *.json
