@@ -235,10 +235,8 @@ function receivedMessage(event) {
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       const shopInfo = request(ShopUrl + 'shop.json', function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-          var shopInfoParsed = JSON.parse(body);
-          sendTextMessage(senderID, body)
-        }
+        var shopInfoParsed = JSON.parse(body);
+        sendTextMessage(senderID, body);
       })
     }
 
