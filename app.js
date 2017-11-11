@@ -213,6 +213,7 @@ function receivedMessage(event) {
     method: 'GET',
     path: '/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN
   };
+  const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/orders.json";
 
   console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
     senderID, pageID, timeOfMessage, JSON.stringify(message));
@@ -231,6 +232,14 @@ function receivedMessage(event) {
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
+    }
+    if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
+      const shopInfo = request(ShopUrl, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+          var shopInfoParsed = JSON.parse(body);
+          console.log(shopInfoParsed);
+        }
+      })
     }
 
     const greetings = firstEntity(message.nlp, 'greetings')
@@ -255,14 +264,7 @@ function receivedMessage(event) {
         sendTextMessage(senderID, messageText)
 
     }
-        //SHOP API
-  const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/orders.json";
-  const shopInfo = request(ShopUrl,function(error, response, body){
-    if (!error && response.statusCode==200){
-     var shopInfoParsed = JSON.parse(body);
-     console.log(shopInfoParsed);
-    }
-  })
+    //SHOP API
   }
 }
 
