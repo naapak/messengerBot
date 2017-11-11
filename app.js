@@ -18,13 +18,15 @@ const
   https = require('https'),
   request = require('request'),
   Shopify = require('shopify-api-node');
-
+  Product = require('./models/products');
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
+
+mongoose.connect('mongodb://kayleoss:goodboy114@ds245755.mlab.com:45755/messenger-bot')
 /*
  * Open config/default.json and set your config values before running this code. 
  * You can also set them using environment variables.
@@ -195,6 +197,29 @@ app.post('/webhook', function (req, res) {
   }
 });
 
+// var products_url = 'https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/products.json';
+shopify.product.list().then(
+  (product_list) => {
+    product_list.products.forEach(function(element) { 
+      var newProduct = {
+        id: element.id,
+        title: element.title,
+        product_type: element.product_type,
+        tags: element.tags
+        };
+        
+        Product.create(newProduct, function(err, newProduct){
+            if (err){
+              console.log(err);
+            }else{
+              console.log(newProduct);
+            }
+        })
+     }
+    )}
+)
+
+
 /*
  * Message Event
  *
@@ -239,12 +264,17 @@ function receivedMessage(event) {
     }
   }
 
-  const greetings = firstEntity(message.nlp, 'greetings')
+  const greetings = firstEntity(message.nlp, 'greetings');
   if (greetings && greetings.confidence > 0.8) {
     const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
       var data = JSON.parse(body);
       sendTextMessage(senderID, 'Hey ' + data.first_name);
     });
+  }
+
+  const buy = firstEntity(message.nlp, 'buy');
+  if (buy && buy.confidence > 0.8){
+    
   }
 
   //var lcm = messageText.toLowerCase();
