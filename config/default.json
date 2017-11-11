@@ -1,5 +1,11 @@
 {
-    "appSecret": "726cedab1bb35784cff22254f709aaeb",
-    "pageAccessToken": "EAASKAJHhVk8BAHFCJGquLbIoJZCCHGlu89H7cwYXL7WEwuaH9RKakSBCqbbia2PEzm7ZA57NPcMeiTa0XCGat0F6ZAzVweAB4qO4NZCnLIITXAOJtHTDcgUBs4wn1yR8Mr1mMWkmkvOHI4RUsFmASWS83fPHJU5RV2yfJ6z4ZCAZDZD",
-    "validationToken": "TheyShotAMovieOnceInMyHometown"
+    "sh_shopName": "dev-circle-toronto-hackathon",
+    "host_url": "", //ngrok URL here
+    //FACEBOOK CREDENTIALS
+    "fb_appSecret": "",
+    "fb_pageAccessToken": "",
+    "fb_validationToken": "",
+    //SHOPIFY CREDENTIALS
+    "sh_apiKey": "52e82a861b0ca05d7541b01262a0da34",
+    "sh_apiPassword": "",
 }

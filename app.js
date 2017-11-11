@@ -1,3 +1,12 @@
+/*
+ * Copyright 2016-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 /* jshint node: true, devel: true */
 'use strict';
 
@@ -7,45 +16,69 @@ const
   crypto = require('crypto'),
   express = require('express'),
   https = require('https'),  
-  request = require('request');
+  request = require('request'),
+  Shopify = require('shopify-api-node');
 
 var app = express();
-app.set('port', 5000);
+app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
 /*
- * Open config/default.json and set your config values before running this server.
- * You can restart the *node server* without reconfiguring anything. However, whenever 
- * you restart *ngrok* you will receive a new random url, so you must revalidate your 
- * webhook url in your App Dashboard.
+ * Open config/default.json and set your config values before running this code. 
+ * You can also set them using environment variables.
+ *
  */
 
-// App Dashboard > Dashboard > click the Show button in the App Secret field
-const APP_SECRET = config.get('appSecret');
+// App Secret can be retrieved from the App Dashboard
+const FB_APP_SECRET = (process.env.FB_APP_SECRET) ? 
+  process.env.FB_APP_SECRET :
+  config.get('fb_appSecret');
 
-// App Dashboard > Webhooks > Edit Subscription > copy whatever random value you decide to use in the Verify Token field
-const VALIDATION_TOKEN = config.get('validationToken');
+// Arbitrary value used to validate a webhook
+const FB_VALIDATION_TOKEN = (process.env.FB_VALIDATION_TOKEN) ?
+  (process.env.FB_VALIDATION_TOKEN) :
+  config.get('fb_validationToken');
 
-// App Dashboard > Messenger > Settings > Token Generation > select your page > copy the token that appears
-const PAGE_ACCESS_TOKEN = config.get('pageAccessToken');
+// Generate a page access token for your page from the App Dashboard
+const FB_PAGE_ACCESS_TOKEN = (process.env.FB_PAGE_ACCESS_TOKEN) ?
+  (process.env.FB_PAGE_ACCESS_TOKEN) :
+  config.get('fb_pageAccessToken');
 
-// In an early version of this bot, the images were served from the local public/ folder.
-// Using an ngrok.io domain to serve images is no longer supported by the Messenger Platform.
-// Github Pages provides a simple image hosting solution (and it's free)
-const IMG_BASE_PATH = 'https://rodnolan.github.io/posterific-static-images/';
+const SHOPIFY_SHOP_NAME = (process.env.SHOP_NAME) ? 
+  process.env.SHOP_NAME :
+  config.get('sh_shopName');  
+
+const SHOPIFY_API_KEY = (process.env.SHOP_API_KEY) ? 
+  process.env.SHOP_API_KEY :
+  config.get('sh_apiKey');  
+
+const SHOPIFY_API_PASSWORD = (process.env.SHOP_API_PASSWORD) ? 
+  process.env.SHOP_API_PASSWORD :
+  config.get('sh_apiPassword');  
+
+const HOST_URL = (process.env.HOST_URL) ? 
+  process.env.HOST_URL :
+  config.get('host_url');  
 
 // make sure that everything has been properly configured
-if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN)) {
+if (!(FB_APP_SECRET && FB_VALIDATION_TOKEN && FB_PAGE_ACCESS_TOKEN && SHOPIFY_SHOP_NAME && SHOPIFY_API_KEY && SHOPIFY_API_PASSWORD && HOST_URL)) {
   console.error("Missing config values");
   process.exit(1);
 }
 
+const shopify = new Shopify({
+  shopName: SHOPIFY_SHOP_NAME,
+  apiKey: SHOPIFY_API_KEY,
+  password: SHOPIFY_API_PASSWORD
+});
+
+
 /*
- * Verify that the request came from Facebook. You should expect a hash of 
- * the App Secret from your App Dashboard to be present in the x-hub-signature 
- * header field.
+ * Verify that the callback came from Facebook. Using the App Secret from 
+ * your App Dashboard, we can verify the signature that is sent with each 
+ * callback in the x-hub-signature field, located in the header.
  *
  * https://developers.facebook.com/docs/graph-api/webhooks#setup
  *
@@ -61,130 +94,139 @@ function verifyRequestSignature(req, res, buf) {
     var method = elements[0];
     var signatureHash = elements[1];
 
-    var expectedHash = crypto.createHmac('sha1', APP_SECRET)
+    var expectedHash = crypto.createHmac('sha1', FB_APP_SECRET)
                         .update(buf)
                         .digest('hex');
 
-    console.log("received  %s", signatureHash);
-    console.log("exepected %s", expectedHash);
+    //console.log("signatureHash: " + signatureHash);
+    //console.log("expectedHash: " + expectedHash);
+
     if (signatureHash != expectedHash) {
       throw new Error("Couldn't validate the request signature.");
     }
   }
 }
 
-
 /*
- * Verify that your validation token matches the one that is sent 
- * from the App Dashboard during the webhook verification check.
- * Only then should you respond to the request with the 
- * challenge that was sent. 
+ * Use your own validation token. Check that the token used in the Webhook 
+ * setup is the same token used here.
+ *
  */
 app.get('/webhook', function(req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
-      req.query['hub.verify_token'] === VALIDATION_TOKEN) {
+      req.query['hub.verify_token'] === FB_VALIDATION_TOKEN) {
     console.log("[app.get] Validating webhook");
     res.status(200).send(req.query['hub.challenge']);
   } else {
-    console.error("Failed validation. Validation token mismatch.");
+    console.error("Failed validation. Make sure the validation tokens match.");
     res.sendStatus(403);          
   }  
 });
 
+/**
+ * serves a static page for the webview
+ */ 
+app.get('/product_description', function(req, res) {
+  var product_id = req.query['id'];
+  if (product_id !== 'null') {
+    console.log("[app.get] product id:" + product_id);
+    var sh_product = shopify.product.get(product_id);
+    sh_product.then(function(product) {
+      console.log(product.options[0].values);
+      res.status(200).send(product.body_html);
+    }, function(error) {
+      console.error("Error retrieving product");
+      res.sendStatus(400).send("Error retrieving product");
+    });
+    
+  } else {
+    console.error("Product id is required");
+    res.sendStatus(400).send("Product id is required");          
+  }  
+});
 
 /*
- * All callbacks from Messenger are POST-ed. All events from all subscription 
- * types are sent to the same webhook. 
- * 
- * Subscribe your app to your page to receive callbacks for your page. 
+ * All callbacks for Messenger are POST-ed. They will be sent to the same
+ * webhook. Be sure to subscribe your app to your page to receive callbacks
+ * for your page. 
  * https://developers.facebook.com/docs/messenger-platform/product-overview/setup#subscribe_app
+ *
  */
 app.post('/webhook', function (req, res) {
-  console.log("message received!");
+  // You must send back a status 200 to let the Messenger Platform know that you've
+  // received the callback. Do that right away because the countdown doesn't stop when 
+  // you're paused on a breakpoint! Otherwise, the request might time out. 
+  res.sendStatus(200);
+        
   var data = req.body;
-  console.log(JSON.stringify(data));
-  
-  if (data.object == 'page') {
-    // send back a 200 within 20 seconds to avoid timeouts
-    res.sendStatus(200);
-    // entries from multiple pages may be batched in one request
-    data.entry.forEach(function(pageEntry) {
-      
-        // iterate over each messaging event for this page
-        pageEntry.messaging.forEach(function(messagingEvent) {
-          let propertyNames = Object.keys(messagingEvent);
-          console.log("[app.post] Webhook event props: ", propertyNames.join());
-  
-          if (messagingEvent.message) {
-            processMessageFromPage(messagingEvent);
-          } else if (messagingEvent.postback) {
-            // user replied by tapping a postback button
-            processPostbackMessage(messagingEvent);
-          } else {
-            console.log("[app.post] not prepared to handle this message type.");
-          }
-  
-        });
-      });
-  
 
+  // Make sure this is a page subscription
+  if (data.object == 'page') {
+    // entries may be batched so iterate over each one
+    data.entry.forEach(function(pageEntry) {
+      var pageID = pageEntry.id;
+      var timeOfEvent = pageEntry.time;
+
+      // iterate over each messaging event
+      pageEntry.messaging.forEach(function(messagingEvent) {
+
+        let propertyNames = [];
+        for (var prop in messagingEvent) { propertyNames.push(prop)}
+        console.log("[app.post] Webhook received a messagingEvent with properties: ", propertyNames.join());
+        
+        if (messagingEvent.message) {
+          // someone sent a message
+          receivedMessage(messagingEvent);
+
+        } else if (messagingEvent.delivery) {
+          // messenger platform sent a delivery confirmation
+          receivedDeliveryConfirmation(messagingEvent);
+
+        } else if (messagingEvent.postback) {
+          // user replied by tapping one of our postback buttons
+          receivedPostback(messagingEvent);
+
+        } else {
+          console.log("[app.post] Webhook is not prepared to handle this message.");
+
+        }
+      });
+    });
   }
 });
 
 /*
- * called when a postback button is tapped 
- * ie. buttons in structured messages and the Get Started button 
+ * Message Event
  *
- * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
+ * This event is called when a message is sent to your page. The 'message' 
+ * object format can vary depending on the kind of message that was received.
+ * Read more at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-received
  * 
  */
-function processPostbackMessage(event) {
-  var senderID = event.sender.id;
-  var recipientID = event.recipient.id;
-  var timeOfPostback = event.timestamp;
-
-  // the developer-defined field you set when you create postback buttons
-  var payload = event.postback.payload;
-
-  console.log("[processPostbackMessage] from user (%d) " +
-    "on page (%d) " +
-    "with payload ('%s') " + 
-    "at (%d)", 
-    senderID, recipientID, payload, timeOfPostback);
-
-  respondToHelpRequest(senderID, payload);
-}
-
-/*
- * Called when a message is sent to your page. 
- * 
- */
-function processMessageFromPage(event) {
+function receivedMessage(event) {
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
   var message = event.message;
 
-  console.log("[processMessageFromPage] user (%d) page (%d) timestamp (%d) and message (%s)", 
+  console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)", 
     senderID, pageID, timeOfMessage, JSON.stringify(message));
 
   if (message.quick_reply) {
-    console.log("[processMessageFromPage] quick_reply.payload (%s)", 
+    console.log("[receivedMessage] quick_reply.payload (%s)", 
       message.quick_reply.payload);
     handleQuickReplyResponse(event);
     return;
   }
 
-  // the 'message' object format can vary depending on the kind of message that was received.
-  // See: https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-received
   var messageText = message.text;
   if (messageText) {
-    console.log("[processMessageFromPage]: %s", messageText); 
-    var lowerCaseMsg = messageText.toLowerCase();
-    switch (lowerCaseMsg) {
+
+    var lcm = messageText.toLowerCase();
+    switch (lcm) {
+      // if the text matches any special keywords, handle them accordingly
       case 'help':
-        // handle 'help' as a special case
-        sendHelpOptionsAsQuickReplies(senderID);
+        sendHelpOptionsAsButtonTemplates(senderID);
         break;
       
       default:
@@ -194,448 +236,209 @@ function processMessageFromPage(event) {
   }
 }
 
-
 /*
- * Send a message with the four Quick Reply buttons 
- * 
+ * Send a message with buttons.
+ *
  */
-function sendHelpOptionsAsQuickReplies(recipientId) {
-  console.log("[sendHelpOptionsAsQuickReplies] Sending help options menu"); 
+function sendHelpOptionsAsButtonTemplates(recipientId) {
+  console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu"); 
   var messageData = {
     recipient: {
       id: recipientId
     },
-    message: {
-      text: "Select a feature to learn more.",
-      quick_replies: [
-        { 
-          "content_type":"text",
-          "title":"Rotation",
-          "payload":"QR_ROTATION_1" 
-        },
-        { 
-          "content_type":"text",
-          "title":"Photo",
-          "payload":"QR_PHOTO_1" 
-        },
-        { 
-          "content_type":"text",
-          "title":"Caption",
-          "payload":"QR_CAPTION_1" 
-        },
-        { 
-          "content_type":"text",
-          "title":"Background",
-          "payload":"QR_BACKGROUND_1" 
+    message:{
+      attachment:{
+        type:"template",
+        payload:{
+          template_type:"button",
+          text:"Click the button before to get a list of 3 of our products.",
+          buttons:[
+            {
+              "type":"postback",
+              "title":"Get 3 products",
+              "payload":JSON.stringify({action: 'QR_GET_PRODUCT_LIST', limit: 3})
+            }
+            // limit of three buttons 
+          ]
         }
-      ]
+      }
     }
   };
+
   callSendAPI(messageData);
 }
 
 /*
- * user tapped a Quick Reply button; respond with the appropriate content
- * 
+ * Someone tapped one of the Quick Reply buttons so 
+ * respond with the appropriate content
+ *
  */
 function handleQuickReplyResponse(event) {
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var message = event.message;
-  var payload = message.quick_reply.payload;
+  var quickReplyPayload = message.quick_reply.payload;
   
   console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)", 
-    payload, senderID, pageID, JSON.stringify(message));
-
-  respondToHelpRequest(senderID, payload);
-
-}
-
-/*
- * simplify switching between the two help response implementations 
- */
-function respondToHelpRequest(senderID, payload) {
-  // set useGenericTemplates to false to send image attachments instead of generic templates
-  var useGenericTemplates = true; 
-  var messageData = {};
+    quickReplyPayload, senderID, pageID, JSON.stringify(message));
   
-  if (useGenericTemplates) {
-    // respond to the sender's help request by presenting a carousel-style 
-    // set of screenshots of the application in action 
-    // each response includes all the content for the requested feature
-    messageData = getGenericTemplates(senderID, payload);
-  } else {
-    // respond to the help request by presenting one image at a time
-    messageData = getImageAttachments(senderID, payload);
-  }
-
-  callSendAPI(messageData);  
+  // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
+  respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
+  
 }
-
 
 /*
  * This response uses templateElements to present the user with a carousel
- * You send ALL of the content for the selected feature and they swipe 
- * left and right to see it
+ * You send ALL of the content for the selected feature and they can 
+ * swipe from side to side to see it
  *
  */
-function getGenericTemplates(recipientId, requestForHelpOnFeature) {
-  console.log("[getGenericTemplates] handling help request for %s",
+function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
+  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
     requestForHelpOnFeature);
   var templateElements = [];
-  var sectionButtons = [];
-  // each button must be of type postback but title
-  // and payload are variable depending on which 
-  // set of options you want to provide
-  var addSectionButton = function(title, payload) {
-    sectionButtons.push({
+
+  var requestPayload = JSON.parse(requestForHelpOnFeature);
+
+  var sectionButton = function(title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, {action: action});
+    return {
       type: 'postback',
       title: title,
-      payload: payload
-    });
+      payload: JSON.stringify(payload)
+    };
   }
 
-  // Since there are only four options in total, we will provide 
-  // buttons for each of the remaining three with each section. 
-  // This provides the user with maximum flexibility to navigate
-
-  switch (requestForHelpOnFeature) {
-    case 'QR_ROTATION_1':
-      addSectionButton('Photo', 'QR_PHOTO_1');
-      addSectionButton('Caption', 'QR_CAPTION_1');
-      addSectionButton('Background', 'QR_BACKGROUND_1');
-      
-      templateElements.push(
-        {
-          title: "Rotation",
-          subtitle: "portrait mode",
-          image_url: IMG_BASE_PATH + "01-rotate-landscape.png",
-          buttons: sectionButtons 
-        }, 
-        {
-          title: "Rotation",
-          subtitle: "landscape mode",
-          image_url: IMG_BASE_PATH + "02-rotate-portrait.png",
-          buttons: sectionButtons 
-        }
-      );
-    break; 
-    case 'QR_PHOTO_1':
-      addSectionButton('Rotation', 'QR_ROTATION_1');
-      addSectionButton('Caption', 'QR_CAPTION_1');
-      addSectionButton('Background', 'QR_BACKGROUND_1');
-
-      templateElements.push(
-        {
-          title: "Photo Picker",
-          subtitle: "click to start",
-          image_url: IMG_BASE_PATH + "03-photo-hover.png",
-          buttons: sectionButtons 
-        }, 
-        {
-          title: "Photo Picker",
-          subtitle: "Downloads folder",
-          image_url: IMG_BASE_PATH + "04-photo-list.png",
-          buttons: sectionButtons 
-        },
-        {
-          title: "Photo Picker",
-          subtitle: "photo selected",
-          image_url: IMG_BASE_PATH + "05-photo-selected.png",
-          buttons: sectionButtons 
-        }        
-      );
-    break; 
-    case 'QR_CAPTION_1':
-      addSectionButton('Rotation', 'QR_ROTATION_1');
-      addSectionButton('Photo', 'QR_PHOTO_1');
-      addSectionButton('Background', 'QR_BACKGROUND_1');
-
-      templateElements.push(
-        {
-          title: "Caption",
-          subtitle: "click to start",
-          image_url: IMG_BASE_PATH + "06-text-hover.png",
-          buttons: sectionButtons 
-        }, 
-        {
-          title: "Caption",
-          subtitle: "enter text",
-          image_url: IMG_BASE_PATH + "07-text-mid-entry.png",
-          buttons: sectionButtons 
-        },
-        {
-          title: "Caption",
-          subtitle: "click OK",
-          image_url: IMG_BASE_PATH + "08-text-entry-done.png",
-          buttons: sectionButtons 
-        },
-        {
-          title: "Caption",
-          subtitle: "Caption done",
-          image_url: IMG_BASE_PATH + "09-text-complete.png",
-          buttons: sectionButtons 
-        }
-      );
-    break; 
-    case 'QR_BACKGROUND_1':
-      addSectionButton('Rotation', 'QR_ROTATION_1');
-      addSectionButton('Photo', 'QR_PHOTO_1');
-      addSectionButton('Caption', 'QR_CAPTION_1');
-
-      templateElements.push(
-        {
-          title: "Background Color Picker",
-          subtitle: "click to start",
-          image_url: IMG_BASE_PATH + "10-background-picker-hover.png",
-          buttons: sectionButtons 
-        },
-        {
-          title: "Background Color Picker",
-          subtitle: "click current color",
-          image_url: IMG_BASE_PATH + "11-background-picker-appears.png",
-          buttons: sectionButtons 
-        },
-        {
-          title: "Background Color Picker",
-          subtitle: "select new color",
-          image_url: IMG_BASE_PATH + "12-background-picker-selection.png",
-          buttons: sectionButtons 
-        }, 
-        {
-          title: "Background Color Picker",
-          subtitle: "click ok",
-          image_url: IMG_BASE_PATH + "13-background-picker-selection-made.png",
-          buttons: sectionButtons 
-        },
-        {
-          title: "Background Color Picker",
-          subtitle: "color is applied",
-          image_url: IMG_BASE_PATH + "14-background-changed.png",
-          buttons: sectionButtons 
-        }
-      );
-    break; 
+  var textButton = function(title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, {action: action});
+    return {
+      "content_type":"text",
+      title: title,
+      payload: JSON.stringify(payload)
+    };
   }
 
-  if (templateElements.length < 2) {
-    console.error("each template should have at least two elements");
-  }
-  
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: templateElements
-        }
-      }
-    }
-  };
+  switch (requestPayload.action) {
+    case 'QR_GET_PRODUCT_LIST':
+      var products = shopify.product.list({ limit: requestPayload.limit});
+      products.then(function(listOfProducs) {
+        listOfProducs.forEach(function(product) {
+          var url = HOST_URL + "/product.html?id="+product.id;
+          templateElements.push({
+            title: product.title,
+            subtitle: product.tags,
+            image_url: product.image.src,
+            buttons:[
+              {
+                "type":"web_url",
+                "url": url,
+                "title":"Read description",
+                "webview_height_ratio": "compact",
+                "messenger_extensions": "true"
+              },
+              sectionButton('Get options', 'QR_GET_PRODUCT_OPTIONS', {id: product.id})
+            ]
+          });
+        });
 
-  return messageData;
+        
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "generic",
+                elements: templateElements
+              }
+            }
+          }
+        };
+
+        callSendAPI(messageData);
+
+      });
+
+      break;
+
+    case 'QR_GET_PRODUCT_OPTIONS':
+      var sh_product = shopify.product.get(requestPayload.id);
+      sh_product.then(function(product) {
+        var options = '';
+        product.options.map(function(option) {
+          options = options + option.name + ': ' + option.values.join(',') + "\n";
+        });
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            text: options.substring(0, 640),
+            quick_replies: [
+              textButton('Get 3 products', 'QR_GET_PRODUCT_LIST', {limit: 3})
+            ]
+          },
+        };
+        callSendAPI(messageData);
+      });
+
+
+
+      break;
+  }
+
 }
 
 /*
- * This response uses image attachments to illustrate each step of each feature.
- * This is less flexible because you are limited in the number of options you can
- * provide for the user. This technique is best for cases where the content should
- * be consumed in a strict linear order.
+ * Delivery Confirmation Event
+ *
+ * This event is sent to confirm the delivery of a message. Read more about 
+ * these fields at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-delivered
  *
  */
-function getImageAttachments(recipientId, helpRequestType) {
-  var textToSend = '';
-  var quickReplies = [
-    {
-      "content_type":"text",
-      "title":"Restart",
-      "payload":"QR_RESTART"
-    }, // this option should always be present because it allows the user to start over
-    {
-      "content_type":"text",
-      "title":"Continue",
-      "payload":""
-    } // the Continue option only makes sense if there is more content to show 
-      // remove this option when you are at the end of a branch in the content tree
-      // i.e.: when you are showing the last message for the selected feature
-  ];
-  
-  // to send an image attachment in a message, just set the payload property of this attachment object
-  // if the payload property is defined, this will be added to the message before it is sent
-  var attachment = {
-    "type": "image",
-    "payload": ""
-  };
+function receivedDeliveryConfirmation(event) {
+  var senderID = event.sender.id; // the user who sent the message
+  var recipientID = event.recipient.id; // the page they sent it from
+  var delivery = event.delivery;
+  var messageIDs = delivery.mids;
+  var watermark = delivery.watermark;
+  var sequenceNumber = delivery.seq;
 
-  switch(helpRequestType) {
-    case 'QR_RESTART' :
-      sendHelpOptionsAsQuickReplies(recipientId);
-      return;
-    break;
-    
-    // the Rotation feature
-    case 'QR_ROTATION_1' :
-      textToSend = 'Click the Rotate button to toggle the poster\'s orientation between landscape and portrait mode.';
-      quickReplies[1].payload = "QR_ROTATION_2";
-    break; 
-    case 'QR_ROTATION_2' :
-      // 1 of 2 (portrait, landscape)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "01-rotate-landscape.png"
-      }
-      quickReplies[1].payload = "QR_ROTATION_3";
-    break; 
-    case 'QR_ROTATION_3' :
-      // 2 of 2 (portrait, landscape)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "02-rotate-portrait.png"
-      }
-      quickReplies.pop();
-      quickReplies[0].title = "Explore another feature";
-    break; 
-    // the Rotation feature
-
-
-    // the Photo feature
-    case 'QR_PHOTO_1' :
-      textToSend = 'Click the Photo button to select an image to use on your poster. We recommend visiting https://unsplash.com/random from your device to seed your Downloads folder with some images before you get started.';
-      quickReplies[1].payload = "QR_PHOTO_2";
-    break; 
-    case 'QR_PHOTO_2' :
-      // 1 of 3 (placeholder image, Downloads folder, poster with image)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "03-photo-hover.png"
-      }
-      quickReplies[1].payload = "QR_PHOTO_3";
-    break; 
-    case 'QR_PHOTO_3' :
-      // 2 of 3 (placeholder image, Downloads folder, poster with image)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "04-photo-list.png"
-      }
-      quickReplies[1].payload = "QR_PHOTO_4";
-    break; 
-    case 'QR_PHOTO_4' :
-      // 3 of 3 (placeholder image, Downloads folder, poster with image)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "05-photo-selected.png"
-      }
-      quickReplies.pop();
-      quickReplies[0].title = "Explore another feature";
-    break; 
-    // the Photo feature
-
-
-    // the Caption feature
-    case 'QR_CAPTION_1' :
-      textToSend = 'Click the Text button to set the caption that appears at the bottom of the poster.';
-      quickReplies[1].payload = "QR_CAPTION_2";
-    break; 
-    case 'QR_CAPTION_2' :
-      // 1 of 4 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "06-text-hover.png"
-      }
-      quickReplies[1].payload = "QR_CAPTION_3";
-    break; 
-    case 'QR_CAPTION_3' :
-      // 2 of 4: (hover, entering caption, mid-edit, poster with new caption
-      attachment.payload = {
-        url: IMG_BASE_PATH + "07-text-mid-entry.png"
-      }
-      quickReplies[1].payload = "QR_CAPTION_4";
-    break; 
-    case 'QR_CAPTION_4' :
-      // 3 of 4 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "08-text-entry-done.png"
-      }
-      quickReplies[1].payload = "QR_CAPTION_5";
-    break; 
-    case 'QR_CAPTION_5' :
-      // 4 of 4 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "09-text-complete.png"
-      }
-      quickReplies.pop();
-      quickReplies[0].title = "Explore another feature";
-    break; 
-    // the Caption feature
-
-
-
-    // the Color Picker feature
-    case 'QR_BACKGROUND_1' :
-      textToSend = 'Click the Background button to select a background color for your poster.';
-      quickReplies[1].payload = "QR_BACKGROUND_2";
-    break; 
-    case 'QR_BACKGROUND_2' :
-      // 1 of 5 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "10-background-picker-hover.png"
-      }
-      quickReplies[1].payload = "QR_BACKGROUND_3";
-    break; 
-    case 'QR_BACKGROUND_3' :
-      // 2 of 5 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "11-background-picker-appears.png"
-      }
-      quickReplies[1].payload = "QR_BACKGROUND_4";
-    break; 
-    case 'QR_BACKGROUND_4' :
-      // 3 of 5 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "12-background-picker-selection.png"
-      }
-      quickReplies[1].payload = "QR_BACKGROUND_5";
-    break; 
-    case 'QR_BACKGROUND_5' :
-      // 4 of 5 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "13-background-picker-selection-made.png"
-      }
-      quickReplies[1].payload = "QR_BACKGROUND_6";
-    break; 
-    case 'QR_BACKGROUND_6' :
-      // 5 of 5 (hover, entering caption, mid-edit, poster with new caption)
-      attachment.payload = {
-        url: IMG_BASE_PATH + "14-background-changed.png"
-      }
-      quickReplies.pop();
-      quickReplies[0].title = "Explore another feature";
-    break; 
-    // the Color Picker feature
-
-    default : 
-      sendHelpOptionsAsQuickReplies(recipientId);
-      return;
-
-    break;
+  if (messageIDs) {
+    messageIDs.forEach(function(messageID) {
+      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered", 
+        messageID);
+    });
   }
 
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: textToSend,
-      quick_replies: quickReplies
-    },
-  };
-  if (attachment.payload !== "") {
-    messageData.message.attachment = attachment;
-    // text can not be specified when you're sending an attachment
-    delete messageData.message.text;
-  }
-
-  return messageData;
+  console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
 }
 
+/*
+ * Postback Event
+ *
+ * This event is called when a postback is tapped on a Structured Message. 
+ * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
+ * 
+ */
+function receivedPostback(event) {
+  var senderID = event.sender.id;
+  var recipientID = event.recipient.id;
+  var timeOfPostback = event.timestamp;
+
+  // The 'payload' param is a developer-defined field which is set in a postback 
+  // button for Structured Messages. 
+  var payload = event.postback.payload;
+
+  console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " + 
+    "at (%d)", senderID, recipientID, payload, timeOfPostback);
+
+  respondToHelpRequestWithTemplates(senderID, payload);
+}
 
 /*
  * Send a text message using the Send API.
@@ -647,22 +450,23 @@ function sendTextMessage(recipientId, messageText) {
       id: recipientId
     },
     message: {
-      text: messageText // utf-8, 640-character max
+      text: messageText, // utf-8, 640-character max
+      metadata: "DEVELOPER_DEFINED_METADATA"
     }
   };
-  console.log("[sendTextMessage] %s", JSON.stringify(messageData));
+
   callSendAPI(messageData);
 }
 
 /*
- * Call the Send API. If the call succeeds, the 
- * message id is returned in the response.
+ * Call the Send API. The message data goes in the body. If successful, we'll 
+ * get the message id in a response 
  *
  */
 function callSendAPI(messageData) {
   request({
     uri: 'https://graph.facebook.com/v2.6/me/messages',
-    qs: { access_token: PAGE_ACCESS_TOKEN },
+    qs: { access_token: FB_PAGE_ACCESS_TOKEN },
     method: 'POST',
     json: messageData
 
@@ -672,11 +476,11 @@ function callSendAPI(messageData) {
       var messageId = body.message_id;
 
       if (messageId) {
-        console.log("[callSendAPI] message id %s sent to recipient %s", 
+        console.log("[callSendAPI] Successfully sent message with id %s to recipient %s", 
           messageId, recipientId);
       } else {
-        console.log("[callSendAPI] called Send API for recipient %s", 
-          recipientId);
+      console.log("[callSendAPI] Successfully called Send API for recipient %s", 
+        recipientId);
       }
     } else {
       console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
@@ -685,10 +489,52 @@ function callSendAPI(messageData) {
 }
 
 /*
- * Start your server
+ * Send profile info. This will setup the bot with a greeting and a Get Started button
+ */
+function callSendProfile() {
+  request({
+    uri: 'https://graph.facebook.com/v2.6/me/messenger_profile',
+    qs: { access_token: FB_PAGE_ACCESS_TOKEN },
+    method: 'POST',
+    json: {
+      "greeting":[
+          {
+          "locale":"default",
+          "text":`Hi there! I'm a bot here to assist you with Candyboxx's Shopify store. To get started, click the "Get Started" button or type "help".`
+          }
+      ] ,
+      "get_started": {
+        "payload": JSON.stringify({action: 'QR_GET_PRODUCT_LIST', limit: 3})
+      },
+      "whitelisted_domains":[
+        HOST_URL
+      ]
+    }
+
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      console.log("[callSendProfile]: ", body);
+      var result = body.result;
+      if (result === 'success') {
+        console.log("[callSendProfile] Successfully sent profile.");
+      } else {
+        console.error("[callSendProfile] There was an error sending profile.");
+      }
+    } else {
+      console.error("[callSendProfile] Send profile call failed", response.statusCode, response.statusMessage, body.error);
+    }
+  });  
+}
+
+/*
+ * Start server
+ * Webhooks must be available via SSL with a certificate signed by a valid 
+ * certificate authority.
  */
 app.listen(app.get('port'), function() {
   console.log('[app.listen] Node app is running on port', app.get('port'));
+  callSendProfile();
 });
 
 module.exports = app;
+
