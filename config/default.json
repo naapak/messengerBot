@@ -1,4 +1,5 @@
 {
+
     "sh_shopName": "dev-circle-toronto-hackathon",
     "host_url": "https://bf620500.ngrok.io", //ngrok URL here
     //FACEBOOK CREDENTIALS
@@ -7,5 +8,11 @@
     "fb_validationToken": "JaxxedBot",
     //SHOPIFY CREDENTIALS
     "sh_apiKey": "52e82a861b0ca05d7541b01262a0da34",
+<<<<<<< HEAD
     "sh_apiPassword": "4cf5481969535398711eaba9d3b63ea0"
 }
+=======
+    "sh_apiPassword": "4cf5481969535398711eaba9d3b63ea0",
+}
+
+>>>>>>> d3767747831aaaf6ae93a89a3053275f364455fa
