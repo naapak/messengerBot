@@ -207,6 +207,7 @@ function receivedMessage(event) {
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
+   console.log (senderID);
   var message = event.message;
   var options = {
     host: 'graph.facebook.com',
@@ -231,6 +232,7 @@ function receivedMessage(event) {
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
+
 
 
     }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
@@ -262,11 +264,19 @@ function receivedMessage(event) {
         sendTextMessage(senderID, messageText)
 
     }
-  }
+   
+
+  //   app.post( '"https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN +'"' , function (req, res) {
+  // var asasfa = 'https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN;
+  // console.log(asasfa);
+  // console.log (senderID);
+
+  // });
+}
+
 }
 
 
-<<<<<<< HEAD
 
 /*
  * Send a message with buttons.
@@ -292,10 +302,11 @@ function sendHelpOptionsAsButtonTemplates(recipientId) {
             }
             // limit of three buttons 
           ]
-=======
+
 app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function (req, res) {
   var asasfa = 'https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN;
   sendTextmessage(senderID, messageGreeting);
+
   /*
    * Send a message with buttons.
    *
@@ -321,7 +332,7 @@ app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last
               // limit of three buttons 
             ]
           }
->>>>>>> fe3f52ca3b14ebf6e81ca80a7520b3c57cc7c217
+
         }
       }
     };
