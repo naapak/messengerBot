@@ -232,8 +232,14 @@ function receivedMessage(event) {
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
 
+<<<<<<< HEAD
     } else if (intent && intent.confidence > 0.8 && intent.value == 'greeting') {
       var url = app.get("https://graph.facebook.com/v2.6/" + senderID + "?fields=first_name,last_name,profile_pic&access_token=<PAGE_ACCESS_TOKEN>");
+=======
+    }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
+      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=first_name,last_name,profile_pic&access_token=<PAGE_ACCESS_TOKEN>";
+    
+>>>>>>> afb9f47a103e1e0651e51b547b0f08448332b0d8
       console.log(url);
     }
 
