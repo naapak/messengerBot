@@ -5,7 +5,7 @@
   "main": "app.js",
   "start-comment": "adding these two flags (--inspect --debug-brk) will make the node app debuggable using chrome dev tools",
   "scripts": {
-    "start": "node app.js",
+    "start": "nodemon app.js",
     "debug": "node --nolazy --debug-brk=5858 app.js",
     "lint": "jshint --exclude node_modules .",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,6 +22,7 @@
     "ejs": "^2.4.2",
     "express": "^4.13.4",
     "ngrok": "^2.2.22",
+    "nodemon": "^1.12.1",
     "request": "^2.72.0",
     "shopify-api-node": "^2.8.0"
   },

@@ -224,8 +224,13 @@ function receivedMessage(event) {
   var messageText = message.text;
   if (messageText) {
 
-    var lcm = messageText.toLowerCase();
-    switch (lcm) {
+    const intent = firstEntity(message.nlp, 'intent');
+    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
+      sendHelpOptionsAsButtonTemplates(senderID);
+    }
+
+    //var lcm = messageText.toLowerCase();
+    switch (messageText) {
       // if the text matches any special keywords, handle them accordingly
       case 'help':
         sendHelpOptionsAsButtonTemplates(senderID);
@@ -233,8 +238,9 @@ function receivedMessage(event) {
 
       default:
         // otherwise, just echo it back to the sender
-        sendTextMessage(senderID, messageText);
+        sendTextMessage(senderID, JSON.stringify(message.nlp));
         sendTextMessage(senderID, JSON.stringify(message));
+        sendTextMessage(senderID, messageText)
     }
   }
 }
@@ -541,3 +547,6 @@ app.listen(app.get('port'), function () {
 
 module.exports = app;
 
+function firstEntity(nlp, name) {
+  return nlp && nlp.entities && nlp.entities && nlp.entities[name] && nlp.entities[name][0];
+}
