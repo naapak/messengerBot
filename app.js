@@ -240,6 +240,14 @@ function receivedMessage(event) {
       })
     }
 
+    }
+
+
+<<<<<<< HEAD
+=======
+    }
+
+>>>>>>> master
     const greetings = firstEntity(message.nlp, 'greetings')
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
@@ -262,7 +270,9 @@ function receivedMessage(event) {
         sendTextMessage(senderID, messageText)
 
     }
+
     //SHOP API
+
   }
 }
 
