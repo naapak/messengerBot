@@ -197,6 +197,7 @@ app.post('/webhook', function (req, res) {
   }
 });
 
+//POPULATE DATABASE WITH SHOPIFY JSON FILE 
 // var products_url = 'https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/products.json';
 shopify.product.list().then(
   (product_list) => {
@@ -207,7 +208,7 @@ shopify.product.list().then(
         product_type: element.product_type,
         tags: element.tags
         };
-        
+
         Product.create(newProduct, function(err, newProduct){
             if (err){
               console.log(err);
