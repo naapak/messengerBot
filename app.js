@@ -207,7 +207,6 @@ function receivedMessage(event) {
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
-   console.log (senderID);
   var message = event.message;
   var options = {
     host: 'graph.facebook.com',
@@ -234,20 +233,12 @@ function receivedMessage(event) {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
 
-
-    }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
-
-      var url = "https://graph.facebook.com/v2.6/" + senderID +  "?fields=&access_token=EAACFAbvTl7wBAJPieDiAG75ZCTXxBt7jZBuS2M1ym0GeTNf35E0Me3OdZAqLks6oYGFX33IWKwowbdzZCKtATFux5Kp3rtHKPUPpI3Lsu878NzvHPV5Rzw891yyZBp5pLyYDoRg6lCqkk1SlJoZBoiziptdTcIWmCbCWApQ9XNwgZDZD" ;
-      request(url, function(err, response, body){
-        if (!error && response.statusCode==200){
-          var parsedResults = JSON.parse(body);
-         console.log(parsedResults.name);
-         }else{
-           console.log(error);
-         }
-     })
-      }
-      console.log(url);
+    const greetings = firstEntity(message.nlp, 'greetings')
+    if (greetings && greetings.confidence > 0.8) {
+      const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
+        var data = JSON.parse(body);
+        sendTextMessage(senderID, 'Hey ' + data.first_name);
+      });
     }
 
     //var lcm = messageText.toLowerCase();
@@ -264,18 +255,8 @@ function receivedMessage(event) {
         sendTextMessage(senderID, messageText)
 
     }
-   
-
-  //   app.post( '"https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN +'"' , function (req, res) {
-  // var asasfa = 'https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN;
-  // console.log(asasfa);
-  // console.log (senderID);
-
-  // });
+  }
 }
-
-
-
 
 /*
  * Send a message with buttons.
@@ -301,316 +282,284 @@ function sendHelpOptionsAsButtonTemplates(recipientId) {
             }
             // limit of three buttons 
           ]
+        }
+      }
+    }
+  };
 
-        }}}}
-
-app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function (req, res) {
-  var asasfa = 'https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN;
-  sendTextmessage(senderID, messageGreeting); });
+  callSendAPI(messageData);
 }
-  /*
-   * Send a message with buttons.
-   *
-   */
-  function sendHelpOptionsAsButtonTemplates(recipientId) {
-    console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
-    var messageData = {
-      recipient: {
-        id: recipientId
-      },
-      message: {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "button",
-            text: "Click the button before to get a list of 5 of our products.",
+
+/*
+ * Someone tapped one of the Quick Reply buttons so 
+ * respond with the appropriate content
+ *
+ */
+function handleQuickReplyResponse(event) {
+  var senderID = event.sender.id;
+  var pageID = event.recipient.id;
+  var message = event.message;
+  var quickReplyPayload = message.quick_reply.payload;
+
+  console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
+    quickReplyPayload, senderID, pageID, JSON.stringify(message));
+
+  // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
+  respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
+
+}
+
+/*
+ * This response uses templateElements to present the user with a carousel
+ * You send ALL of the content for the selected feature and they can 
+ * swipe from side to side to see it
+ *
+ */
+function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
+  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+    requestForHelpOnFeature);
+  var templateElements = [];
+
+  var requestPayload = JSON.parse(requestForHelpOnFeature);
+
+  var sectionButton = function (title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, { action: action });
+    return {
+      type: 'postback',
+      title: title,
+      payload: JSON.stringify(payload)
+    };
+  }
+
+  var textButton = function (title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, { action: action });
+    return {
+      "content_type": "text",
+      title: title,
+      payload: JSON.stringify(payload)
+    };
+  }
+
+  switch (requestPayload.action) {
+    case 'QR_GET_PRODUCT_LIST':
+      var products = shopify.product.list({ limit: requestPayload.limit });
+      products.then(function (listOfProducs) {
+        listOfProducs.forEach(function (product) {
+          var url = HOST_URL + "/product.html?id=" + product.id;
+          templateElements.push({
+            title: product.title,
+            subtitle: product.tags,
+            image_url: product.image.src,
             buttons: [
               {
-                "type": "postback",
-                "title": "Get 3 products",
-                "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 5 })
-              }
-              // limit of three buttons 
+                "type": "web_url",
+                "url": url,
+                "title": "Read description",
+                "webview_height_ratio": "compact",
+                "messenger_extensions": "true"
+              },
+              sectionButton('Get options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id })
             ]
-          }
-
-        }
-      }
-    };
-
-    callSendAPI(messageData);
-  }
-
-  /*
-   * Someone tapped one of the Quick Reply buttons so 
-   * respond with the appropriate content
-   *
-   */
-  function handleQuickReplyResponse(event) {
-    var senderID = event.sender.id;
-    var pageID = event.recipient.id;
-    var message = event.message;
-    var quickReplyPayload = message.quick_reply.payload;
-
-    console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
-      quickReplyPayload, senderID, pageID, JSON.stringify(message));
-
-    // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
-    respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
-
-  }
-
-  /*
-   * This response uses templateElements to present the user with a carousel
-   * You send ALL of the content for the selected feature and they can 
-   * swipe from side to side to see it
-   *
-   */
-  function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
-    console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-      requestForHelpOnFeature);
-    var templateElements = [];
-
-    var requestPayload = JSON.parse(requestForHelpOnFeature);
-
-    var sectionButton = function (title, action, options) {
-      var payload = options | {};
-      payload = Object.assign(options, { action: action });
-      return {
-        type: 'postback',
-        title: title,
-        payload: JSON.stringify(payload)
-      };
-    }
-
-    var textButton = function (title, action, options) {
-      var payload = options | {};
-      payload = Object.assign(options, { action: action });
-      return {
-        "content_type": "text",
-        title: title,
-        payload: JSON.stringify(payload)
-      };
-    }
-
-    switch (requestPayload.action) {
-      case 'QR_GET_PRODUCT_LIST':
-        var products = shopify.product.list({ limit: requestPayload.limit });
-        products.then(function (listOfProducs) {
-          listOfProducs.forEach(function (product) {
-            var url = HOST_URL + "/product.html?id=" + product.id;
-            templateElements.push({
-              title: product.title,
-              subtitle: product.tags,
-              image_url: product.image.src,
-              buttons: [
-                {
-                  "type": "web_url",
-                  "url": url,
-                  "title": "Read description",
-                  "webview_height_ratio": "compact",
-                  "messenger_extensions": "true"
-                },
-                sectionButton('Get options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id })
-              ]
-            });
           });
+        });
 
 
-          var messageData = {
-            recipient: {
-              id: recipientId
-            },
-            message: {
-              attachment: {
-                type: "template",
-                payload: {
-                  template_type: "generic",
-                  elements: templateElements
-                }
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "generic",
+                elements: templateElements
               }
             }
-          };
-
-          callSendAPI(messageData);
-
-        });
-
-        break;
-
-      case 'QR_GET_PRODUCT_OPTIONS':
-        var sh_product = shopify.product.get(requestPayload.id);
-        sh_product.then(function (product) {
-          var options = '';
-          product.options.map(function (option) {
-            options = options + option.name + ': ' + option.values.join(',') + "\n";
-          });
-          var messageData = {
-            recipient: {
-              id: recipientId
-            },
-            message: {
-              text: options.substring(0, 640),
-              quick_replies: [
-                textButton('Get 3 products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
-              ]
-            },
-          };
-          callSendAPI(messageData);
-        });
-
-
-
-        break;
-    }
-
-  }
-
-  /*
-   * Delivery Confirmation Event
-   *
-   * This event is sent to confirm the delivery of a message. Read more about 
-   * these fields at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-delivered
-   *
-   */
-  function receivedDeliveryConfirmation(event) {
-    var senderID = event.sender.id; // the user who sent the message
-    var recipientID = event.recipient.id; // the page they sent it from
-    var delivery = event.delivery;
-    var messageIDs = delivery.mids;
-    var watermark = delivery.watermark;
-    var sequenceNumber = delivery.seq;
-
-    if (messageIDs) {
-      messageIDs.forEach(function (messageID) {
-        console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
-          messageID);
-      });
-    }
-
-    console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
-  }
-
-  /*
-   * Postback Event
-   *
-   * This event is called when a postback is tapped on a Structured Message. 
-   * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
-   * 
-   */
-  function receivedPostback(event) {
-    var senderID = event.sender.id;
-    var recipientID = event.recipient.id;
-    var timeOfPostback = event.timestamp;
-
-    // The 'payload' param is a developer-defined field which is set in a postback 
-    // button for Structured Messages. 
-    var payload = event.postback.payload;
-
-    console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
-      "at (%d)", senderID, recipientID, payload, timeOfPostback);
-
-    respondToHelpRequestWithTemplates(senderID, payload);
-  }
-
-  /*
-   * Send a text message using the Send API.
-   *
-   */
-  function sendTextMessage(recipientId, messageText) {
-    var messageData = {
-      recipient: {
-        id: recipientId
-      },
-      message: {
-        text: messageText, // utf-8, 640-character max
-        metadata: "DEVELOPER_DEFINED_METADATA"
-      }
-    };
-
-    callSendAPI(messageData);
-  }
-
-  /*
-   * Call the Send API. The message data goes in the body. If successful, we'll 
-   * get the message id in a response 
-   *
-   */
-  function callSendAPI(messageData) {
-    request({
-      uri: 'https://graph.facebook.com/v2.6/me/messages',
-      qs: { access_token: FB_PAGE_ACCESS_TOKEN },
-      method: 'POST',
-      json: messageData
-
-    }, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        var recipientId = body.recipient_id;
-        var messageId = body.message_id;
-
-        if (messageId) {
-          console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
-            messageId, recipientId);
-        } else {
-          console.log("[callSendAPI] Successfully called Send API for recipient %s",
-            recipientId);
-        }
-      } else {
-        console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
-      }
-    });
-  }
-
-  /*
-   * Send profile info. This will setup the bot with a greeting and a Get Started button
-   */
-  function callSendProfile() {
-    request({
-      uri: 'https://graph.facebook.com/v2.6/me/messenger_profile',
-      qs: { access_token: FB_PAGE_ACCESS_TOKEN },
-      method: 'POST',
-      json: {
-        "greeting": [
-          {
-            "locale": "default",
-            "text": `Hi there! I'm a bot here to assist you with Candyboxx's Shopify store. To get started, click the "Get Started" button or type "help".`
           }
-        ],
-        "get_started": {
-          "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 3 })
-        },
-        "whitelisted_domains": [
-          HOST_URL
-        ]
-      }
+        };
 
-    }, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        console.log("[callSendProfile]: ", body);
-        var result = body.result;
-        if (result === 'success') {
-          console.log("[callSendProfile] Successfully sent profile.");
-        } else {
-          console.error("[callSendProfile] There was an error sending profile.");
-        }
-      } else {
-        console.error("[callSendProfile] Send profile call failed", response.statusCode, response.statusMessage, body.error);
-      }
+        callSendAPI(messageData);
+
+      });
+
+      break;
+
+    case 'QR_GET_PRODUCT_OPTIONS':
+      var sh_product = shopify.product.get(requestPayload.id);
+      sh_product.then(function (product) {
+        var options = '';
+        product.options.map(function (option) {
+          options = options + option.name + ': ' + option.values.join(',') + "\n";
+        });
+        var messageData = {
+          recipient: {
+            id: recipientId
+          },
+          message: {
+            text: options.substring(0, 640),
+            quick_replies: [
+              textButton('Get 3 products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
+            ]
+          },
+        };
+        callSendAPI(messageData);
+      });
+
+
+
+      break;
+  }
+
+}
+
+/*
+ * Delivery Confirmation Event
+ *
+ * This event is sent to confirm the delivery of a message. Read more about 
+ * these fields at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-delivered
+ *
+ */
+function receivedDeliveryConfirmation(event) {
+  var senderID = event.sender.id; // the user who sent the message
+  var recipientID = event.recipient.id; // the page they sent it from
+  var delivery = event.delivery;
+  var messageIDs = delivery.mids;
+  var watermark = delivery.watermark;
+  var sequenceNumber = delivery.seq;
+
+  if (messageIDs) {
+    messageIDs.forEach(function (messageID) {
+      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
+        messageID);
     });
   }
 
-  /*
-   * Start server
-   * Webhooks must be available via SSL with a certificate signed by a valid 
-   * certificate authority.
-   */
-  app.listen(app.get('port'), function () {
-    console.log('[app.listen] Node app is running on port', app.get('port'));
-    callSendProfile();
+  console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
+}
+
+/*
+ * Postback Event
+ *
+ * This event is called when a postback is tapped on a Structured Message. 
+ * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
+ * 
+ */
+function receivedPostback(event) {
+  var senderID = event.sender.id;
+  var recipientID = event.recipient.id;
+  var timeOfPostback = event.timestamp;
+
+  // The 'payload' param is a developer-defined field which is set in a postback 
+  // button for Structured Messages. 
+  var payload = event.postback.payload;
+
+  console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
+    "at (%d)", senderID, recipientID, payload, timeOfPostback);
+
+  respondToHelpRequestWithTemplates(senderID, payload);
+}
+
+/*
+ * Send a text message using the Send API.
+ *
+ */
+function sendTextMessage(recipientId, messageText) {
+  var messageData = {
+    recipient: {
+      id: recipientId
+    },
+    message: {
+      text: messageText, // utf-8, 640-character max
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+
+  callSendAPI(messageData);
+}
+
+/*
+ * Call the Send API. The message data goes in the body. If successful, we'll 
+ * get the message id in a response 
+ *
+ */
+function callSendAPI(messageData) {
+  request({
+    uri: 'https://graph.facebook.com/v2.6/me/messages',
+    qs: { access_token: FB_PAGE_ACCESS_TOKEN },
+    method: 'POST',
+    json: messageData
+
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      var recipientId = body.recipient_id;
+      var messageId = body.message_id;
+
+      if (messageId) {
+        console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
+          messageId, recipientId);
+      } else {
+        console.log("[callSendAPI] Successfully called Send API for recipient %s",
+          recipientId);
+      }
+    } else {
+      console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
+    }
   });
+}
 
-  module.exports = app;
+/*
+ * Send profile info. This will setup the bot with a greeting and a Get Started button
+ */
+function callSendProfile() {
+  request({
+    uri: 'https://graph.facebook.com/v2.6/me/messenger_profile',
+    qs: { access_token: FB_PAGE_ACCESS_TOKEN },
+    method: 'POST',
+    json: {
+      "greeting": [
+        {
+          "locale": "default",
+          "text": `Hi there! I'm a bot here to assist you with Candyboxx's Shopify store. To get started, click the "Get Started" button or type "help".`
+        }
+      ],
+      "get_started": {
+        "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 3 })
+      },
+      "whitelisted_domains": [
+        HOST_URL
+      ]
+    }
 
-  function firstEntity(nlp, name) {
-    return nlp && nlp.entities && nlp.entities && nlp.entities[name] && nlp.entities[name][0];
-  }
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      console.log("[callSendProfile]: ", body);
+      var result = body.result;
+      if (result === 'success') {
+        console.log("[callSendProfile] Successfully sent profile.");
+      } else {
+        console.error("[callSendProfile] There was an error sending profile.");
+      }
+    } else {
+      console.error("[callSendProfile] Send profile call failed", response.statusCode, response.statusMessage, body.error);
+    }
+  });
+}
+
+/*
+ * Start server
+ * Webhooks must be available via SSL with a certificate signed by a valid 
+ * certificate authority.
+ */
+app.listen(app.get('port'), function () {
+  console.log('[app.listen] Node app is running on port', app.get('port'));
+  callSendProfile();
+});
+
+module.exports = app;
+
+function firstEntity(nlp, name) {
+  return nlp && nlp.entities && nlp.entities && nlp.entities[name] && nlp.entities[name][0];
+}
