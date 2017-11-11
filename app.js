@@ -231,7 +231,6 @@ function receivedMessage(event) {
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
-
     }
 
     const greetings = firstEntity(message.nlp, 'greetings')
