@@ -237,7 +237,7 @@ function receivedMessage(event) {
       const shopInfo = request(ShopUrl + 'shop.json', function (error, response, body) {
         if (!error && response.statusCode == 200) {
           var shopInfoParsed = JSON.parse(body);
-          console.log(shopInfoParsed);
+          sendTextMessage(senderID, body)
         }
       })
     }
