@@ -256,7 +256,6 @@ function receivedMessage(event) {
 
     default:
       // otherwise, just echo it back to the sender
-      sendTextMessage(senderID, JSON.stringify(message.nlp));
       sendTextMessage(senderID, JSON.stringify(message));
       sendTextMessage(senderID, messageText)
 
