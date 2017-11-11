@@ -226,10 +226,7 @@ function receivedMessage(event) {
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
-    }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
-      app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function(req, res){
-      sendTextmessage(senderID, messageGreeting);
-      })
+    }
     }
 
     //var lcm = messageText.toLowerCase();
@@ -248,6 +245,10 @@ function receivedMessage(event) {
   }
 }
 
+
+app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function(req, res){
+  var asasfa = 'https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN;
+sendTextmessage(senderID, messageGreeting);
 /*
  * Send a message with buttons.
  *
