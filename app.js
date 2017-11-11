@@ -241,6 +241,7 @@ function receivedMessage(event) {
         sendTextMessage(senderID, JSON.stringify(message.nlp));
         sendTextMessage(senderID, JSON.stringify(message));
         sendTextMessage(senderID, messageText)
+        
     }
   }
 }
