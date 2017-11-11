@@ -212,6 +212,8 @@ function receivedMessage(event) {
   console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
     senderID, pageID, timeOfMessage, JSON.stringify(message));
 
+
+
   if (message.quick_reply) {
     console.log("[receivedMessage] quick_reply.payload (%s)",
       message.quick_reply.payload);
@@ -232,6 +234,7 @@ function receivedMessage(event) {
       default:
         // otherwise, just echo it back to the sender
         sendTextMessage(senderID, messageText);
+        sendTextMessage(senderID, JSON.stringify(message));
     }
   }
 }
