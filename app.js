@@ -208,6 +208,11 @@ function receivedMessage(event) {
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
   var message = event.message;
+  var options = {
+    host: 'graph.facebook.com',
+    method: 'GET',
+    path: '/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN
+  };
 
   console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
     senderID, pageID, timeOfMessage, JSON.stringify(message));
@@ -226,11 +231,10 @@ function receivedMessage(event) {
     const intent = firstEntity(message.nlp, 'intent');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
-    }else if (intent && intent.confidence > 0.8 && intent.value == 'greeting'){
-      app.get('https://graph.facebook.com/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN, function(req, res){
-      sendTextmessage(senderID, messageGreeting);
-      })
     }
+    https.request(options, function (res) {
+      sendTextmessage(senderID, JSON.stringify(res))
+    })
 
     //var lcm = messageText.toLowerCase();
     switch (messageText) {
@@ -244,7 +248,7 @@ function receivedMessage(event) {
         sendTextMessage(senderID, JSON.stringify(message.nlp));
         sendTextMessage(senderID, JSON.stringify(message));
         sendTextMessage(senderID, messageText)
-        
+
     }
   }
 }
