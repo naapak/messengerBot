@@ -255,6 +255,14 @@ function receivedMessage(event) {
         sendTextMessage(senderID, messageText)
 
     }
+        //SHOP API
+  const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/orders.json";
+  const shopInfo = request(ShopUrl,function(error, response, body){
+    if (!error && response.statusCode==200){
+     var shopInfoParsed = JSON.parse(body);
+     console.log(shopInfoParsed);
+    }
+  })
   }
 }
 
