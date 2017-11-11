@@ -10,12 +10,12 @@
 /* jshint node: true, devel: true */
 'use strict';
 
-const 
+const
   bodyParser = require('body-parser'),
   config = require('config'),
   crypto = require('crypto'),
   express = require('express'),
-  https = require('https'),  
+  https = require('https'),
   request = require('request'),
   Shopify = require('shopify-api-node');
 
@@ -32,7 +32,7 @@ app.use(express.static('public'));
  */
 
 // App Secret can be retrieved from the App Dashboard
-const FB_APP_SECRET = (process.env.FB_APP_SECRET) ? 
+const FB_APP_SECRET = (process.env.FB_APP_SECRET) ?
   process.env.FB_APP_SECRET :
   config.get('fb_appSecret');
 
@@ -46,21 +46,21 @@ const FB_PAGE_ACCESS_TOKEN = (process.env.FB_PAGE_ACCESS_TOKEN) ?
   (process.env.FB_PAGE_ACCESS_TOKEN) :
   config.get('fb_pageAccessToken');
 
-const SHOPIFY_SHOP_NAME = (process.env.SHOP_NAME) ? 
+const SHOPIFY_SHOP_NAME = (process.env.SHOP_NAME) ?
   process.env.SHOP_NAME :
-  config.get('sh_shopName');  
+  config.get('sh_shopName');
 
-const SHOPIFY_API_KEY = (process.env.SHOP_API_KEY) ? 
+const SHOPIFY_API_KEY = (process.env.SHOP_API_KEY) ?
   process.env.SHOP_API_KEY :
-  config.get('sh_apiKey');  
+  config.get('sh_apiKey');
 
-const SHOPIFY_API_PASSWORD = (process.env.SHOP_API_PASSWORD) ? 
+const SHOPIFY_API_PASSWORD = (process.env.SHOP_API_PASSWORD) ?
   process.env.SHOP_API_PASSWORD :
-  config.get('sh_apiPassword');  
+  config.get('sh_apiPassword');
 
-const HOST_URL = (process.env.HOST_URL) ? 
+const HOST_URL = (process.env.HOST_URL) ?
   process.env.HOST_URL :
-  config.get('host_url');  
+  config.get('host_url');
 
 // make sure that everything has been properly configured
 if (!(FB_APP_SECRET && FB_VALIDATION_TOKEN && FB_PAGE_ACCESS_TOKEN && SHOPIFY_SHOP_NAME && SHOPIFY_API_KEY && SHOPIFY_API_PASSWORD && HOST_URL)) {
@@ -95,8 +95,8 @@ function verifyRequestSignature(req, res, buf) {
     var signatureHash = elements[1];
 
     var expectedHash = crypto.createHmac('sha1', FB_APP_SECRET)
-                        .update(buf)
-                        .digest('hex');
+      .update(buf)
+      .digest('hex');
 
     //console.log("signatureHash: " + signatureHash);
     //console.log("expectedHash: " + expectedHash);
@@ -112,37 +112,37 @@ function verifyRequestSignature(req, res, buf) {
  * setup is the same token used here.
  *
  */
-app.get('/webhook', function(req, res) {
+app.get('/webhook', function (req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
-      req.query['hub.verify_token'] === FB_VALIDATION_TOKEN) {
+    req.query['hub.verify_token'] === FB_VALIDATION_TOKEN) {
     console.log("[app.get] Validating webhook");
     res.status(200).send(req.query['hub.challenge']);
   } else {
     console.error("Failed validation. Make sure the validation tokens match.");
-    res.sendStatus(403);          
-  }  
+    res.sendStatus(403);
+  }
 });
 
 /**
  * serves a static page for the webview
- */ 
-app.get('/product_description', function(req, res) {
+ */
+app.get('/product_description', function (req, res) {
   var product_id = req.query['id'];
   if (product_id !== 'null') {
     console.log("[app.get] product id:" + product_id);
     var sh_product = shopify.product.get(product_id);
-    sh_product.then(function(product) {
+    sh_product.then(function (product) {
       console.log(product.options[0].values);
       res.status(200).send(product.body_html);
-    }, function(error) {
+    }, function (error) {
       console.error("Error retrieving product");
       res.sendStatus(400).send("Error retrieving product");
     });
-    
+
   } else {
     console.error("Product id is required");
-    res.sendStatus(400).send("Product id is required");          
-  }  
+    res.sendStatus(400).send("Product id is required");
+  }
 });
 
 /*
@@ -157,23 +157,23 @@ app.post('/webhook', function (req, res) {
   // received the callback. Do that right away because the countdown doesn't stop when 
   // you're paused on a breakpoint! Otherwise, the request might time out. 
   res.sendStatus(200);
-        
+
   var data = req.body;
 
   // Make sure this is a page subscription
   if (data.object == 'page') {
     // entries may be batched so iterate over each one
-    data.entry.forEach(function(pageEntry) {
+    data.entry.forEach(function (pageEntry) {
       var pageID = pageEntry.id;
       var timeOfEvent = pageEntry.time;
 
       // iterate over each messaging event
-      pageEntry.messaging.forEach(function(messagingEvent) {
+      pageEntry.messaging.forEach(function (messagingEvent) {
 
         let propertyNames = [];
-        for (var prop in messagingEvent) { propertyNames.push(prop)}
+        for (var prop in messagingEvent) { propertyNames.push(prop) }
         console.log("[app.post] Webhook received a messagingEvent with properties: ", propertyNames.join());
-        
+
         if (messagingEvent.message) {
           // someone sent a message
           receivedMessage(messagingEvent);
@@ -209,11 +209,11 @@ function receivedMessage(event) {
   var timeOfMessage = event.timestamp;
   var message = event.message;
 
-  console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)", 
+  console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
     senderID, pageID, timeOfMessage, JSON.stringify(message));
 
   if (message.quick_reply) {
-    console.log("[receivedMessage] quick_reply.payload (%s)", 
+    console.log("[receivedMessage] quick_reply.payload (%s)",
       message.quick_reply.payload);
     handleQuickReplyResponse(event);
     return;
@@ -228,7 +228,7 @@ function receivedMessage(event) {
       case 'help':
         sendHelpOptionsAsButtonTemplates(senderID);
         break;
-      
+
       default:
         // otherwise, just echo it back to the sender
         sendTextMessage(senderID, messageText);
@@ -241,22 +241,22 @@ function receivedMessage(event) {
  *
  */
 function sendHelpOptionsAsButtonTemplates(recipientId) {
-  console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu"); 
+  console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
   var messageData = {
     recipient: {
       id: recipientId
     },
-    message:{
-      attachment:{
-        type:"template",
-        payload:{
-          template_type:"button",
-          text:"Click the button before to get a list of 3 of our products.",
-          buttons:[
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: "Click the button before to get a list of 3 of our products.",
+          buttons: [
             {
-              "type":"postback",
-              "title":"Get 3 products",
-              "payload":JSON.stringify({action: 'QR_GET_PRODUCT_LIST', limit: 3})
+              "type": "postback",
+              "title": "Get 3 products",
+              "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 3 })
             }
             // limit of three buttons 
           ]
@@ -278,13 +278,13 @@ function handleQuickReplyResponse(event) {
   var pageID = event.recipient.id;
   var message = event.message;
   var quickReplyPayload = message.quick_reply.payload;
-  
-  console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)", 
+
+  console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
     quickReplyPayload, senderID, pageID, JSON.stringify(message));
-  
+
   // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
   respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
-  
+
 }
 
 /*
@@ -300,9 +300,9 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
 
-  var sectionButton = function(title, action, options) {
+  var sectionButton = function (title, action, options) {
     var payload = options | {};
-    payload = Object.assign(options, {action: action});
+    payload = Object.assign(options, { action: action });
     return {
       type: 'postback',
       title: title,
@@ -310,11 +310,11 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
     };
   }
 
-  var textButton = function(title, action, options) {
+  var textButton = function (title, action, options) {
     var payload = options | {};
-    payload = Object.assign(options, {action: action});
+    payload = Object.assign(options, { action: action });
     return {
-      "content_type":"text",
+      "content_type": "text",
       title: title,
       payload: JSON.stringify(payload)
     };
@@ -322,28 +322,28 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
 
   switch (requestPayload.action) {
     case 'QR_GET_PRODUCT_LIST':
-      var products = shopify.product.list({ limit: requestPayload.limit});
-      products.then(function(listOfProducs) {
-        listOfProducs.forEach(function(product) {
-          var url = HOST_URL + "/product.html?id="+product.id;
+      var products = shopify.product.list({ limit: requestPayload.limit });
+      products.then(function (listOfProducs) {
+        listOfProducs.forEach(function (product) {
+          var url = HOST_URL + "/product.html?id=" + product.id;
           templateElements.push({
             title: product.title,
             subtitle: product.tags,
             image_url: product.image.src,
-            buttons:[
+            buttons: [
               {
-                "type":"web_url",
+                "type": "web_url",
                 "url": url,
-                "title":"Read description",
+                "title": "Read description",
                 "webview_height_ratio": "compact",
                 "messenger_extensions": "true"
               },
-              sectionButton('Get options', 'QR_GET_PRODUCT_OPTIONS', {id: product.id})
+              sectionButton('Get options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id })
             ]
           });
         });
 
-        
+
         var messageData = {
           recipient: {
             id: recipientId
@@ -367,9 +367,9 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
 
     case 'QR_GET_PRODUCT_OPTIONS':
       var sh_product = shopify.product.get(requestPayload.id);
-      sh_product.then(function(product) {
+      sh_product.then(function (product) {
         var options = '';
-        product.options.map(function(option) {
+        product.options.map(function (option) {
           options = options + option.name + ': ' + option.values.join(',') + "\n";
         });
         var messageData = {
@@ -379,7 +379,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
           message: {
             text: options.substring(0, 640),
             quick_replies: [
-              textButton('Get 3 products', 'QR_GET_PRODUCT_LIST', {limit: 3})
+              textButton('Get 3 products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
             ]
           },
         };
@@ -409,8 +409,8 @@ function receivedDeliveryConfirmation(event) {
   var sequenceNumber = delivery.seq;
 
   if (messageIDs) {
-    messageIDs.forEach(function(messageID) {
-      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered", 
+    messageIDs.forEach(function (messageID) {
+      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
         messageID);
     });
   }
@@ -434,7 +434,7 @@ function receivedPostback(event) {
   // button for Structured Messages. 
   var payload = event.postback.payload;
 
-  console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " + 
+  console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
     "at (%d)", senderID, recipientID, payload, timeOfPostback);
 
   respondToHelpRequestWithTemplates(senderID, payload);
@@ -476,16 +476,16 @@ function callSendAPI(messageData) {
       var messageId = body.message_id;
 
       if (messageId) {
-        console.log("[callSendAPI] Successfully sent message with id %s to recipient %s", 
+        console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
           messageId, recipientId);
       } else {
-      console.log("[callSendAPI] Successfully called Send API for recipient %s", 
-        recipientId);
+        console.log("[callSendAPI] Successfully called Send API for recipient %s",
+          recipientId);
       }
     } else {
       console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
     }
-  });  
+  });
 }
 
 /*
@@ -497,16 +497,16 @@ function callSendProfile() {
     qs: { access_token: FB_PAGE_ACCESS_TOKEN },
     method: 'POST',
     json: {
-      "greeting":[
-          {
-          "locale":"default",
-          "text":`Hi there! I'm a bot here to assist you with Candyboxx's Shopify store. To get started, click the "Get Started" button or type "help".`
-          }
-      ] ,
+      "greeting": [
+        {
+          "locale": "default",
+          "text": `Hi there! I'm a bot here to assist you with Candyboxx's Shopify store. To get started, click the "Get Started" button or type "help".`
+        }
+      ],
       "get_started": {
-        "payload": JSON.stringify({action: 'QR_GET_PRODUCT_LIST', limit: 3})
+        "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 3 })
       },
-      "whitelisted_domains":[
+      "whitelisted_domains": [
         HOST_URL
       ]
     }
@@ -523,7 +523,7 @@ function callSendProfile() {
     } else {
       console.error("[callSendProfile] Send profile call failed", response.statusCode, response.statusMessage, body.error);
     }
-  });  
+  });
 }
 
 /*
@@ -531,7 +531,7 @@ function callSendProfile() {
  * Webhooks must be available via SSL with a certificate signed by a valid 
  * certificate authority.
  */
-app.listen(app.get('port'), function() {
+app.listen(app.get('port'), function () {
   console.log('[app.listen] Node app is running on port', app.get('port'));
   callSendProfile();
 });
