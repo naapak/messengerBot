@@ -574,7 +574,6 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
 
 
       break;
-      break;
 
 
   }
