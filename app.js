@@ -271,44 +271,34 @@ function receivedMessage(event) {
   var messageText = message.text;
   if (messageText) {
     const intent = firstEntity(message.nlp, 'intent');
-    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      sendHelpOptionsAsButtonTemplates(senderID);
-    }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => { sendTextMessage(senderID, location[0].address1); });
     }
-  }
 
-  const greetings = firstEntity(message.nlp, 'greetings');
-  if (greetings && greetings.confidence > 0.8) {
-    const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
-      var data = JSON.parse(body);
-      sendTextMessage(senderID, 'Hey ' + data.first_name);
-    });
-  }
+    const greetings = firstEntity(message.nlp, 'greetings');
+    if (greetings && greetings.confidence > 0.8) {
+      const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
+        var data = JSON.parse(body);
+        sendTextMessage(senderID, 'Hey ' + data.first_name);
+      });
+    }
 
-  const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8) {
-    /* Products.find({}, function(err, foundProducts){
-       if (!err){
-         console.log(err);
-       }else{
-         foundProducts.forEach(function(productName){
-           console.log(productName.title);
-           var productNames = productName.title;
-         })
-       }
-     })
-     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-   } */
-    function search_product_key(messageText) {
-      var keywords = ['dress', 'pants', 'leggings'];
-      keywords.forEach(function (keys) {
-        if (messageText.search(keys) > 0) {
-          return keys;
-        }
-      })
+    const product_get = firstEntity(message.nlp, 'product_get');
+    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
+      /* Products.find({}, function(err, foundProducts){
+         if (!err){
+           console.log(err);
+         }else{
+           foundProducts.forEach(function(productName){
+             console.log(productName.title);
+             var productNames = productName.title;
+           })
+         }
+       })
+       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
+     } */
+      var keys = search_product_key(messageText);
       if (keys) {
         Product.find({ 'product_type': keys }, function (err, foundProducts) {
           if (!err) {
@@ -328,6 +318,9 @@ function receivedMessage(event) {
             sendTextMessage(senderID, sendProducts);
           }
         });
+      }
+      else {
+        sendHelpOptionsAsButtonTemplates(senderID);
       }
     }
   }
@@ -653,4 +646,13 @@ module.exports = app;
 
 function firstEntity(nlp, name) {
   return nlp && nlp.entities && nlp.entities && nlp.entities[name] && nlp.entities[name][0];
+}
+
+function search_product_key(messageText) {
+  var keywords = ['dress', 'pants', 'leggings'];
+  keywords.forEach(function (keys) {
+    if (messageText.search(keys) != -1) {
+      return keys;
+    }
+  })
 }
