@@ -237,7 +237,6 @@ shopify.product.list().then(
   }
 )
 
-<<<<<<< HEAD
 const sectionButton = function (title, action, options) {
   var payload = options | {};
   payload = Object.assign(options, { action: action });
@@ -247,9 +246,6 @@ const sectionButton = function (title, action, options) {
     payload: JSON.stringify(payload)
   };
 }
-=======
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-
 /*
  * Message Event
  *
@@ -299,6 +295,7 @@ function receivedMessage(event) {
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => { 
+<<<<<<< HEAD
           // console.log(location);
 <<<<<<< HEAD
           sendTextMessage(senderID, 'We are at ' + location[0].address1 + " " + location[0].address2 + " " + location[0].city);
@@ -312,6 +309,9 @@ function receivedMessage(event) {
           sendPhoneNumberAsButton(senderID, location[0].phone);
         });
 =======
+=======
+          // console.log(location);
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
           sendTextMessage(senderID, location[0].address1 +" " + location[0].address2+ " " + location[0].city ); });
     }
     if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
@@ -334,6 +334,7 @@ function receivedMessage(event) {
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
 <<<<<<< HEAD
+<<<<<<< HEAD
       sendTextMessage(senderID, "We have lots of products!");
       var keys = search_product_key(messageText);
       if (keys) {
@@ -352,15 +353,34 @@ function receivedMessage(event) {
        sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
      } */
       var keys = search_product_key(messageText);
+=======
+      /* Products.find({}, function(err, foundProducts){
+         if (!err){
+           console.log(err);
+         }else{
+           foundProducts.forEach(function(productName){
+             console.log(productName.title);
+             var productNames = productName.title;
+           })
+         }
+       })
+       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
+     } */
+      var keys = search_product_key(messageText);
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
       console.log(keys);
       if (keys) {
         Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
           console.log(foundProducts);
+<<<<<<< HEAD
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
+=======
 >>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
           if (err) {
             console.log(err);
           } else {
             const sendProducts = foundProducts.forEach(function (product) {
+<<<<<<< HEAD
 <<<<<<< HEAD
               var url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
               templateElements.push({
@@ -396,11 +416,16 @@ function receivedMessage(event) {
             callSendAPI(messageData);
 
 =======
+=======
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
               sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
             });
             /* 'Products: ' 
             + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
             + foundProducts.handle */
+<<<<<<< HEAD
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
+=======
 >>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
 
             sendTextMessage(senderID, sendProducts);
@@ -412,6 +437,7 @@ function receivedMessage(event) {
       }
     }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
   }
@@ -521,6 +547,99 @@ function sendPhoneNumberAsButton(recepientID, phoneNumber) {
   }
 
   //SHOP API
+=======
+  }
+
+  const product_get = firstEntity(message.nlp, 'product_get');
+  if (product_get && product_get.confidence > 0.8) {
+    /* Products.find({}, function(err, foundProducts){
+       if (!err){
+         console.log(err);
+       }else{
+         foundProducts.forEach(function(productName){
+           console.log(productName.title);
+           var productNames = productName.title;
+         })
+       }
+     })
+     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
+   } */
+    function search_product_key(messageText) {
+      var keywords = ['dress', 'pants', 'leggings'];
+      keywords.forEach(function (keys) {
+        if (messageText.search(keys) > 0) {
+          return keys;
+        }
+      })
+      if (keys) {
+        Product.find({ 'product_type': keys }, function (err, foundProducts) {
+          if (!err) {
+            console.log(err);
+          } else {
+            /* let x = 0; 
+           if(x < foundProducts.length){
+             x++; 
+           } */
+            const sendProducts = foundProducts.forEach(function (product) {
+              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            });
+            /* 'Products: ' 
+            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+            + foundProducts.handle */
+
+            sendTextMessage(senderID, sendProducts);
+          }
+        });
+      }
+    }
+  }
+
+  //var lcm = messageText.toLowerCase();
+  switch (messageText) {
+    // if the text matches any special keywords, handle them accordingly
+    case 'help':
+      sendHelpOptionsAsButtonTemplates(senderID);
+      break;
+
+    default:
+      // otherwise, just echo it back to the sender
+      sendTextMessage(senderID, JSON.stringify(message));
+
+  }
+
+  //SHOP API
+
+}
+
+
+
+function sendPhoneNumberAsButton (recepientID, phoneNumber) {
+  console.log("[sendPhoneNumberAsButton] Sending the help options menu");
+ var messageData = {
+    recipient: {
+      id: recepientID
+    },
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: "Phone number is "+ phoneNumber + " . Click the button to call us",
+          buttons: [
+        {
+          "type":"phone_number",
+          "title": phoneNumber ,
+          "payload": phoneNumber
+        }
+        ]
+    }
+    }
+    }
+  
+    };
+
+callSendAPI(messageData);
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
 
 }
 
@@ -616,6 +735,7 @@ function handleQuickReplyResponse(event) {
  */
 function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
 <<<<<<< HEAD
+<<<<<<< HEAD
   // console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
   // requestForHelpOnFeature);
   var templateElements = [];
@@ -628,6 +748,13 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
   var templateElements = [];
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
+=======
+  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+    requestForHelpOnFeature);
+  var templateElements = [];
+
+  var requestPayload = JSON.parse(requestForHelpOnFeature);
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
   var sectionButton = function (title, action, options) {
     var payload = options | {};
     payload = Object.assign(options, { action: action });
@@ -637,6 +764,9 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
       payload: JSON.stringify(payload)
     };
   }
+<<<<<<< HEAD
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
+=======
 >>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
 
   var textButton = function (title, action, options) {
@@ -657,6 +787,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
       products.then(function (listOfProducts) {
         var prod = JSON.stringify(listOfProducts);
       var random1 = prod[_.random(0, prod.length)];
+<<<<<<< HEAD
 
 <<<<<<< HEAD
         // console.log(prod[0]);
@@ -667,6 +798,9 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
           var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/" + product.handle;
           // console.log(url2);
 =======
+=======
+
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
     console.log(prod[0]);
       
         listOfProducts.forEach( (product) => {
@@ -674,6 +808,9 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
           var url = HOST_URL + "/product.html?id=" + product.id;
           var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.title.replace(/\s/g,"-");
           console.log(url2);
+<<<<<<< HEAD
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
+=======
 >>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
 
           templateElements.push({
@@ -787,8 +924,13 @@ function receivedDeliveryConfirmation(event) {
   if (messageIDs) {
     messageIDs.forEach(function (messageID) {
 <<<<<<< HEAD
+<<<<<<< HEAD
       // console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
       // messageID);
+=======
+      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
+        messageID);
+>>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
 =======
       console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
         messageID);
