@@ -300,9 +300,13 @@ function receivedMessage(event) {
           sendTextMessage(senderID, 'We are at ' + location[0].address1 + " " + location[0].address2 + " " + location[0].city);
         });
     }
-    
-    if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
-      shopify.shop.get().then(shop => {sendEmailAsButton(senderID,shop.email); sendPhoneNumberAsButton(senderID,shop.phone);});
+    if (intent && intent.confidence > 0.5 && intent.value == 'phone_get') {
+
+      shopify.location.list().then(
+        (location) => {
+          // console.log(location);
+          sendPhoneNumberAsButton(senderID, location[0].phone);
+        });
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -373,9 +377,48 @@ How can I help you today?');
 
   }
 
-  //SHOP API
+}
+// const product_get = firstEntity(message.nlp, 'product_get');
+// if (product_get && product_get.confidence > 0.8) {
+//   function search_product_key(messageText) {
+//     var keywords = ['dress', 'pants', 'leggings'];
+//     keywords.forEach(function (keys) {
+//       if (messageText.search(keys) > 0) {
+//         return keys;
+//       }
+//     })
+//     if (keys) {
+//       Product.find({ 'tags': keys }, function (err, foundProducts) {
+//         if (!err) {
+//           console.log(err);
+//         } else {
+//           const sendProducts = foundProducts.forEach(function (product) {
+//             return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+//           });
+//           sendTextMessage(senderID, sendProducts);
+//         }
+//       });
+//     }
+//   }
+// }
 
-function sendPhoneNumberAsButton (recepientID, phoneNumber) {
+// switch (messageText) {
+//   // if the text matches any special keywords, handle them accordingly
+//   case 'help':
+//     sendHelpOptionsAsButtonTemplates(senderID);
+//     break;
+
+//   default:
+//     // otherwise, just echo it back to the sender
+//     sendTextMessage(senderID, JSON.stringify(message));
+
+// }
+
+
+
+//SHOP API
+
+function sendPhoneNumberAsButton(recepientID, phoneNumber) {
   // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
   var messageData = {
     recipient: {
@@ -403,33 +446,6 @@ function sendPhoneNumberAsButton (recepientID, phoneNumber) {
   callSendAPI(messageData);
 
 }
-
-function sendEmailAsButton (recepientID, email) {
-  console.log("[sendEmailAsButton] Sending the help options menu");
- var messageData2 = {
-    recipient: {
-      id: recepientID
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Click the button to send us an email",
-          buttons: [
-        {
-          "type":"web_url",
-          "url": email,
-          "title": email
-        }
-        ]
-    }
-    }
-    }
-  
-    };
-callSendAPI(messageData2);
-  }
 
 /*
  * Send a message with buttons.
