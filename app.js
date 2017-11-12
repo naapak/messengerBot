@@ -324,7 +324,7 @@ How can I help you today?');
 
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-
+      sendTextMessage(senderID, "We have lots of products!");
       var keys = search_product_key(messageText);
       if (keys) {
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
