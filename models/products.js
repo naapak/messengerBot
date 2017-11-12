@@ -4,7 +4,8 @@ var mongoose = require('mongoose');
     id: String,
     title: String,
     product_type: String,
-    tags: String
+    tags: String,
+    handle: String
 });
 
 

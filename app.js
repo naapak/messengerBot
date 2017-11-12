@@ -206,7 +206,8 @@ shopify.product.list().then(
         id: element.id,
         title: element.title,
         product_type: element.product_type,
-        tags: element.tags
+        tags: element.tags,
+        handle:element.handle
         };
 
         Product.create(newProduct, function(err, newProduct){
@@ -273,9 +274,9 @@ function receivedMessage(event) {
     });
   }
 
-  const buy = firstEntity(message.nlp, 'buy');
-  if (buy && buy.confidence > 0.8){
-    Products.find({}, function(err, foundProducts){
+  const product_get = firstEntity(message.nlp, 'product_get');
+  if (product_get && product_get.confidence > 0.8){
+   /* Products.find({}, function(err, foundProducts){
       if (!err){
         console.log(err);
       }else{
@@ -286,7 +287,36 @@ function receivedMessage(event) {
       }
     })
     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-  }
+  } */ 
+  function search_product_key(messageText) {
+    var keywords = ['dress', 'pants', 'leggings'];
+    keywords.forEach(function (keys) {
+        if (messageText.search(keys) > 0) {
+            return keys;
+        }
+    })
+    if (keys){
+      Product.find({'product_type': keys}, function(err, foundProducts){
+        if (!err){
+          console.log(err);
+        }else{
+           /* let x = 0; 
+          if(x < foundProducts.length){
+            x++; 
+          } */
+          const sendProducts = foundProducts.forEach(function(product){
+            return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+          });
+          /* 'Products: ' 
+          + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+          + foundProducts.handle */
+          
+          sendTextMessage(senderID, sendProducts );
+        }
+      });
+    }
+}
+}
 
   //var lcm = messageText.toLowerCase();
   switch (messageText) {
