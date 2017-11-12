@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 //POST SCHEMA 
- var productSchema = new mongoose.Schema({
+var productSchema = new mongoose.Schema({
     id: String,
     title: String,
     product_type: String,
@@ -9,5 +9,5 @@ var mongoose = require('mongoose');
 });
 
 
-module.exports = mongoose.model('Product', postSchema);
+module.exports = mongoose.model('Product', productSchema);
 //END OF POST SCHEMA
