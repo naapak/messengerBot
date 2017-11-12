@@ -275,7 +275,17 @@ function receivedMessage(event) {
 
   const buy = firstEntity(message.nlp, 'buy');
   if (buy && buy.confidence > 0.8){
-    
+    Products.find({}, function(err, foundProducts){
+      if (!err){
+        console.log(err);
+      }else{
+        foundProducts.forEach(function(productName){
+          console.log(productName.title);
+          var productNames = productName.title;
+        })
+      }
+    })
+    sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
   }
 
   //var lcm = messageText.toLowerCase();
