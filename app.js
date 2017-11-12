@@ -277,8 +277,8 @@ function receivedMessage(event) {
 
   if (messageText) {
     
-    var intent2 = firstEntity(message.nlp.entities.procedure[0], 'intent');
-    var intent = message.nlp.entities.procedure[0]
+    var intent = firstEntity(message.nlp, 'intent');
+    // var intent = message.nlp.entities
 
 
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
@@ -333,14 +333,42 @@ function receivedMessage(event) {
           if (err) {
             console.log(err);
           } else {
+            var templateElements = [];
             const sendProducts = foundProducts.forEach(function (product) {
-              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
-            });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
+            var  url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            templateElements.push({
+            title: product.title,
+            subtitle: product.tags,
+            image_url: product.image_src,
+            buttons: [
+              // sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+              {
+                "type": "web_url",
+                "url": url,
+                "title": "go to the webpage web Page",
+              },
+            ]
+          });
 
-            sendTextMessage(senderID, sendProducts);
+          });
+
+        var messageData = {
+          recipient: {
+            id: senderID
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "generic",
+                elements: templateElements
+              }
+            }
+          }
+        };
+
+        callSendAPI(messageData);
+
           }
         });
       }
@@ -392,7 +420,10 @@ function receivedMessage(event) {
 
 }
 
+function sendProductsAsButton () {
 
+
+}
 
 function sendPhoneNumberAsButton (recepientID, phoneNumber) {
   console.log("[sendPhoneNumberAsButton] Sending the help options menu");
@@ -487,7 +518,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
   var templateElements = [];
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
-  var sectionButton = function (title, action, options) {
+  const sectionButton = function (title, action, options) {
     var payload = options | {};
     payload = Object.assign(options, { action: action });
     return {
@@ -521,7 +552,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
         listOfProducts.forEach( (product) => {
           // console.log(product);
           var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.title.replace(/\s/g,"-");
+          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.handle;
           console.log(url2);
 
           templateElements.push({
