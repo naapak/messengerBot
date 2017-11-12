@@ -211,7 +211,7 @@ shopify.product.list().then(
           var newProduct = {
             id: element.id,
             title: element.title,
-            images_src: element.images[0].src,
+            image_src: element.images[0].src,
             product_type: element.product_type,
             tags: _.split(element.tags.toLowerCase(), ', '),
             handle: element.handle
