@@ -316,9 +316,6 @@ How can I help you today?');
             const sendProducts = foundProducts.forEach(function (product) {
               sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
             });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
 
             sendTextMessage(senderID, sendProducts);
           }
