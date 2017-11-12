@@ -301,7 +301,7 @@ How can I help you today?');
      } */
       var keys = search_product_key(messageText);
       console.log(keys);
-      if (keys) {
+      if (keys) { //this is the changed part
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
           console.log(foundProducts);
           if (err) {
