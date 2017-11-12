@@ -82,6 +82,7 @@ const shopify = new Shopify({
   password: SHOPIFY_API_PASSWORD
 });
 
+const product_tag_keywords = [];
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from 
@@ -207,14 +208,17 @@ app.post('/webhook', function (req, res) {
 shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
+      _.split(element.tags.toLowerCase(), ', ').forEach(function (key) {
+        if (product_tag_keywords.indexOf(key) == -1) {
+          product_tag_keywords.push(key);
+        }
+      });
       Product.find({ 'id': element.id }, function (err, found) {
-        console.log(err);
-        console.log(found);
         if (!found) {
-          console.log(found);
           var newProduct = {
             id: element.id,
             title: element.title,
+            image_src: element.images[0].src,
             product_type: element.product_type,
             tags: _.split(element.tags.toLowerCase(), ', '),
             handle: element.handle
@@ -307,7 +311,9 @@ function receivedMessage(event) {
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
         var data = JSON.parse(body);
-        sendTextMessage(senderID, 'Hey ' + data.first_name);
+        sendTextMessage(senderID, 'Hey ' + data.first_name + '! :) \n\
+Welcome to CandyBoxx! \nWe offer the best and brightest in fashion!👚👗👙💄💋 \n\
+How can I help you today?');
       });
     }
 
@@ -327,8 +333,8 @@ function receivedMessage(event) {
      } */
       var keys = search_product_key(messageText);
       console.log(keys);
-      if (keys) {
-        Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
+      if (keys) { //this is the changed part
+        Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
           console.log(foundProducts);
           if (err) {
             console.log(err);
@@ -368,6 +374,7 @@ function receivedMessage(event) {
         };
 
         callSendAPI(messageData);
+
 
           }
         });
@@ -798,9 +805,8 @@ function firstEntity(nlp, name) {
 }
 
 function search_product_key(messageText) {
-  var keywords = ['dress', 'pants', 'leggings', 'women'];
   var result = []
-  keywords.forEach(function (keys) {
+  product_tag_keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
       result.push(keys);
     }
