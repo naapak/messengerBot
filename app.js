@@ -308,18 +308,7 @@ How can I help you today?');
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) { //this is the changed part
-        Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
-          console.log(foundProducts);
-          if (err) {
-            console.log(err);
-          } else {
-            const sendProducts = foundProducts.forEach(function (product) {
-              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
-            });
-
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
+        find_products(keys);
       }
       else {
         sendHelpOptionsAsButtonTemplates(senderID);
@@ -659,4 +648,28 @@ function search_product_key(messageText) {
   })
   console.log(result);
   return result;
+}
+
+function find_products(keys) {
+  Product.find({ 'tags': { $all: keys } }, null, { limit: 5 }, function (err, found_complete_Products) {
+    if (!err) {
+      const sendProducts = found_complete_Products.forEach(function (product) {
+        sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
+      });
+    }
+    else {
+      Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, found_partial_Products) {
+        console.log(found_partial_Products);
+        if (err) {
+          console.log(err);
+        } else {
+          const sendProducts = found_partial_Products.forEach(function (product) {
+            sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
+          });
+
+          sendTextMessage(senderID, sendProducts);
+        }
+      });
+    }
+  });
 }
