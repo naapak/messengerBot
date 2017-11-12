@@ -207,10 +207,7 @@ shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
       Product.find({ 'id': element.id }, function (err, found) {
-        console.log(err);
-        console.log(found);
         if (!found) {
-          console.log(found);
           var newProduct = {
             id: element.id,
             title: element.title,
@@ -302,7 +299,7 @@ function receivedMessage(event) {
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) {
-        Product.find({ 'tags': { $in: keys } },null, {limit:5}, function (err, foundProducts) {
+        Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
           console.log(foundProducts);
           if (err) {
             console.log(err);
