@@ -80,8 +80,6 @@ const shopify = new Shopify({
   password: SHOPIFY_API_PASSWORD
 });
 
-const tag_keywords = [];
-
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from 
@@ -208,11 +206,6 @@ app.post('/webhook', function (req, res) {
 shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
-      _.split(element.tags.toLowerCase(), ', ').forEach(function (element) {
-        if (tag_keywords.indexOf(element) == -1) {
-          tag_keywords.push(element);
-        }
-      });
       Product.find({ 'id': element.id }, function (err, found) {
         console.log(err);
         console.log(found);
@@ -289,7 +282,6 @@ function receivedMessage(event) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
         var data = JSON.parse(body);
         sendTextMessage(senderID, 'Hey ' + data.first_name);
-        sendTextMessage(senderID, 'How can I help you?');
       });
     }
 
@@ -310,9 +302,7 @@ function receivedMessage(event) {
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) {
-        Product.find({ 'tags': { $in: keys }
-       }, 
-        function (err, foundProducts) {
+        Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
           console.log(foundProducts);
           if (err) {
             console.log(err);
@@ -658,8 +648,9 @@ function firstEntity(nlp, name) {
 }
 
 function search_product_key(messageText) {
+  var keywords = ['dress', 'pants', 'leggings', 'women'];
   var result = []
-  tag_keywords.forEach(function (keys) {
+  keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
       result.push(keys);
     }
