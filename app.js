@@ -17,13 +17,18 @@ const
   express = require('express'),
   https = require('https'),
   request = require('request'),
-  Shopify = require('shopify-api-node');
-
+  Shopify = require('shopify-api-node'),
+  mongoose = require('mongoose'),
+  Product = require('./models/products');
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
+
+
+
+mongoose.connect('mongodb://kayleoss:goodboy114@ds259305.mlab.com:59305/messenger-bot');
 
 /*
  * Open config/default.json and set your config values before running this code. 
@@ -195,6 +200,42 @@ app.post('/webhook', function (req, res) {
   }
 });
 
+//POPULATE DATABASE WITH SHOPIFY JSON FILE 
+// var products_url = 'https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/products.json';
+shopify.product.list().then(
+  (product_list) => {
+    product_list.forEach(function (element) {
+      Product.find({ 'id': element.id }, function (err, found) {
+        console.log(err);
+        console.log(found);
+        if (!found) {
+          console.log(found);
+          var newProduct = {
+            id: element.id,
+            title: element.title,
+            product_type: element.product_type,
+            tags: element.tags,
+            handle: element.handle
+          };
+
+          Product.create(newProduct, function (err, newProduct) {
+            if (err) {
+              console.log(err);
+            } else {
+
+              console.log(newProduct);
+            }
+          })
+        }
+      }
+      )
+
+    }
+    )
+  }
+)
+
+
 /*
  * Message Event
  *
@@ -239,12 +280,56 @@ function receivedMessage(event) {
     }
   }
 
-  const greetings = firstEntity(message.nlp, 'greetings')
+  const greetings = firstEntity(message.nlp, 'greetings');
   if (greetings && greetings.confidence > 0.8) {
     const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
       var data = JSON.parse(body);
       sendTextMessage(senderID, 'Hey ' + data.first_name);
     });
+  }
+
+  const product_get = firstEntity(message.nlp, 'product_get');
+  if (product_get && product_get.confidence > 0.8) {
+    /* Products.find({}, function(err, foundProducts){
+       if (!err){
+         console.log(err);
+       }else{
+         foundProducts.forEach(function(productName){
+           console.log(productName.title);
+           var productNames = productName.title;
+         })
+       }
+     })
+     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
+   } */
+    function search_product_key(messageText) {
+      var keywords = ['dress', 'pants', 'leggings'];
+      keywords.forEach(function (keys) {
+        if (messageText.search(keys) > 0) {
+          return keys;
+        }
+      })
+      if (keys) {
+        Product.find({ 'product_type': keys }, function (err, foundProducts) {
+          if (!err) {
+            console.log(err);
+          } else {
+            /* let x = 0; 
+           if(x < foundProducts.length){
+             x++; 
+           } */
+            const sendProducts = foundProducts.forEach(function (product) {
+              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            });
+            /* 'Products: ' 
+            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+            + foundProducts.handle */
+
+            sendTextMessage(senderID, sendProducts);
+          }
+        });
+      }
+    }
   }
 
   //var lcm = messageText.toLowerCase();
