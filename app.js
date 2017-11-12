@@ -242,14 +242,14 @@ shopify.product.list().then(
 )
 
 const sectionButton = function (title, action, options) {
-    var payload = options | {};
-    payload = Object.assign(options, { action: action });
-    return {
-      type: 'postback',
-      title: title,
-      payload: JSON.stringify(payload)
-    };
-  }
+  var payload = options | {};
+  payload = Object.assign(options, { action: action });
+  return {
+    type: 'postback',
+    title: title,
+    payload: JSON.stringify(payload)
+  };
+}
 
 /*
  * Message Event
@@ -297,7 +297,7 @@ function receivedMessage(event) {
       shopify.location.list().then(
         (location) => {
           // console.log(location);
-          sendTextMessage(senderID, location[0].address1 + " " + location[0].address2 + " " + location[0].city);
+          sendTextMessage(senderID, 'We are at ' + location[0].address1 + " " + location[0].address2 + " " + location[0].city);
         });
     }
     
@@ -320,31 +320,30 @@ How can I help you today?');
 
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-  
+      sendTextMessage(senderID, "We have lots of products!");
       var keys = search_product_key(messageText);
-      if (keys) { 
+      if (keys) {
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
           if (err) {
             console.log(err);
           } else {
             var templateElements = [];
             const sendProducts = foundProducts.forEach(function (product) {
-              console.log(product);
-            var  url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            templateElements.push({
-            title: product.title,
-            subtitle: product.tags.toString(),
-            image_url: product.image_src,
-            buttons: [
-              sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
-              {
-                "type": "web_url",
-                "url": url,
-                "title": "View the web Page",
-              },
-            ]
-          });
-          });
+              var url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+              templateElements.push({
+                title: product.title,
+                subtitle: product.tags.toString(),
+                image_url: product.image_src,
+                buttons: [
+                  sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+                  {
+                    "type": "web_url",
+                    "url": url,
+                    "title": "View the web Page",
+                  },
+                ]
+              });
+            });
 
             var messageData = {
               recipient: {
@@ -372,16 +371,13 @@ How can I help you today?');
       }
     }
 
-    }
-
   }
-
 
   //SHOP API
 
 function sendPhoneNumberAsButton (recepientID, phoneNumber) {
   // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
- var messageData = {
+  var messageData = {
     recipient: {
       id: recepientID
     },
@@ -495,11 +491,11 @@ function handleQuickReplyResponse(event) {
  */
 function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
   // console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-    // requestForHelpOnFeature);
+  // requestForHelpOnFeature);
   var templateElements = [];
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
-  
+
 
   var textButton = function (title, action, options) {
     var payload = options | {};
@@ -522,12 +518,12 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
 
         console.log(prod[0]);
 
-    // console.log(prod[0]);
-      
-        listOfProducts.forEach( (product) => {
+        // console.log(prod[0]);
+
+        listOfProducts.forEach((product) => {
           // console.log(product);
           var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.handle;
+          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/" + product.handle;
           // console.log(url2);
 
           templateElements.push({
@@ -641,7 +637,7 @@ function receivedDeliveryConfirmation(event) {
   if (messageIDs) {
     messageIDs.forEach(function (messageID) {
       // console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
-        // messageID);
+      // messageID);
     });
   }
 
