@@ -289,6 +289,7 @@ function receivedMessage(event) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
         var data = JSON.parse(body);
         sendTextMessage(senderID, 'Hey ' + data.first_name);
+        sendTextMessage(senderID, 'How can I help you?');
       });
     }
 
