@@ -205,33 +205,31 @@ app.post('/webhook', function (req, res) {
 shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
-      Product.find({'id': element.id}, function(err, found){
-        if (!err){
-          console.log(err);
-        }else{
-              if (found){
-                console.log(found);
-              }else{
-                var newProduct = {
-                  id: element.id,
-                  title: element.title,
-                  product_type: element.product_type,
-                  tags: element.tags,
-                  handle: element.handle
-                };
-          
-                Product.create(newProduct, function (err, newProduct) {
-                  if (err) {
-                    console.log(err);
-                  } else {
-          
-                    console.log(newProduct);
-                  }
-                })
-              }
+      Product.find({ 'id': element.id }, function (err, found) {
+        console.log(err);
+        console.log(found);
+        if (!found) {
+          console.log(found);
+          var newProduct = {
+            id: element.id,
+            title: element.title,
+            product_type: element.product_type,
+            tags: element.tags,
+            handle: element.handle
+          };
+
+          Product.create(newProduct, function (err, newProduct) {
+            if (err) {
+              console.log(err);
+            } else {
+
+              console.log(newProduct);
+            }
+          })
         }
-      })
-      
+      }
+      )
+
     }
     )
   }
