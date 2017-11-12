@@ -310,22 +310,23 @@ function receivedMessage(event) {
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) {
-        Product.find({ 'tags': { $in: keys }.limit(5) },
-          function (err, foundProducts) {
-            console.log(foundProducts);
-            if (err) {
-              console.log(err);
-            } else {
-              const sendProducts = foundProducts.forEach(function (product) {
-                sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
-              });
-              /* 'Products: ' 
-              + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-              + foundProducts.handle */
+        Product.find({ 'tags': { $in: keys }
+       }, 
+        function (err, foundProducts) {
+          console.log(foundProducts);
+          if (err) {
+            console.log(err);
+          } else {
+            const sendProducts = foundProducts.forEach(function (product) {
+              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
+            });
+            /* 'Products: ' 
+            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+            + foundProducts.handle */
 
-              sendTextMessage(senderID, sendProducts);
-            }
-          });
+            sendTextMessage(senderID, sendProducts);
+          }
+        });
       }
       else {
         sendHelpOptionsAsButtonTemplates(senderID);
