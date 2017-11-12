@@ -282,8 +282,6 @@ function receivedMessage(event) {
   if (messageText) {
 
     var intent = firstEntity(message.nlp, 'intent');
-    // var intent = message.nlp.entities
-
 
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -385,30 +383,6 @@ How can I help you today?');
       }
     }
 
-  }
-
-  const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8) {
-    function search_product_key(messageText) {
-      var keywords = ['dress', 'pants', 'leggings'];
-      keywords.forEach(function (keys) {
-        if (messageText.search(keys) > 0) {
-          return keys;
-        }
-      })
-      if (keys) {
-        Product.find({ 'tags': keys }, function (err, foundProducts) {
-          if (!err) {
-            console.log(err);
-          } else {
-            const sendProducts = foundProducts.forEach(function (product) {
-              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            });
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
-      }
-    }
   }
 
   //var lcm = messageText.toLowerCase();
