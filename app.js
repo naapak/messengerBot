@@ -19,7 +19,8 @@ const
   request = require('request'),
   Shopify = require('shopify-api-node'),
   mongoose = require('mongoose'),
-  Product = require('./models/products');
+  Product = require('./models/products'),
+  _ = require('lodash');
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
@@ -214,7 +215,7 @@ shopify.product.list().then(
             id: element.id,
             title: element.title,
             product_type: element.product_type,
-            tags: element.tags,
+            tags: _split(element.tags, ","),
             handle: element.handle
           };
 
