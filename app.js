@@ -20,7 +20,7 @@ const
   Shopify = require('shopify-api-node'),
   mongoose = require('mongoose'),
   Product = require('./models/products');
-  
+
 
 const _ = require('lodash');
 var app = express();
@@ -177,7 +177,7 @@ app.post('/webhook', function (req, res) {
       var timeOfEvent = pageEntry.time;
 
       // iterate over each messaging event
-      pageEntry.messaging.forEach( (messagingEvent) => {
+      pageEntry.messaging.forEach((messagingEvent) => {
 
         let propertyNames = [];
         for (var prop in messagingEvent) { propertyNames.push(prop) }
@@ -264,13 +264,13 @@ function receivedMessage(event) {
   const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/shop.json";
 
   // console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
-    // senderID, pageID, timeOfMessage, JSON.stringify(message));
+  // senderID, pageID, timeOfMessage, JSON.stringify(message));
 
 
 
   if (message.quick_reply) {
     // console.log("[receivedMessage] quick_reply.payload (%s)",
-      // message.quick_reply.payload);
+    // message.quick_reply.payload);
     handleQuickReplyResponse(event);
     return;
   }
@@ -280,7 +280,7 @@ function receivedMessage(event) {
   console.log(messageText);
 
   if (messageText) {
-    
+
     var intent = firstEntity(message.nlp, 'intent');
     // var intent = message.nlp.entities
 
@@ -290,17 +290,18 @@ function receivedMessage(event) {
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
-        (location) => { 
+        (location) => {
           // console.log(location);
-          sendTextMessage(senderID, location[0].address1 +" " + location[0].address2+ " " + location[0].city ); });
+          sendTextMessage(senderID, location[0].address1 + " " + location[0].address2 + " " + location[0].city);
+        });
     }
     if (intent && intent.confidence > 0.5 && intent.value == 'phone_get') {
 
       shopify.location.list().then(
-        (location) => { 
+        (location) => {
           // console.log(location);
-          sendPhoneNumberAsButton(senderID,location[0].phone);
-           });
+          sendPhoneNumberAsButton(senderID, location[0].phone);
+        });
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -334,9 +335,6 @@ How can I help you today?');
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) { //this is the changed part
-<<<<<<< HEAD
-        find_products(keys);
-=======
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
           console.log(foundProducts);
           if (err) {
@@ -344,44 +342,43 @@ How can I help you today?');
           } else {
             var templateElements = [];
             const sendProducts = foundProducts.forEach(function (product) {
-            var  url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            templateElements.push({
-            title: product.title,
-            subtitle: product.tags,
-            image_url: product.image_src,
-            buttons: [
-              // sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
-              {
-                "type": "web_url",
-                "url": url,
-                "title": "go to the webpage web Page",
+              var url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+              templateElements.push({
+                title: product.title,
+                subtitle: product.tags,
+                image_url: product.image_src,
+                buttons: [
+                  // sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+                  {
+                    "type": "web_url",
+                    "url": url,
+                    "title": "go to the webpage web Page",
+                  },
+                ]
+              });
+
+            });
+
+            var messageData = {
+              recipient: {
+                id: senderID
               },
-            ]
-          });
-
-          });
-
-        var messageData = {
-          recipient: {
-            id: senderID
-          },
-          message: {
-            attachment: {
-              type: "template",
-              payload: {
-                template_type: "generic",
-                elements: templateElements
+              message: {
+                attachment: {
+                  type: "template",
+                  payload: {
+                    template_type: "generic",
+                    elements: templateElements
+                  }
+                }
               }
-            }
-          }
-        };
+            };
 
-        callSendAPI(messageData);
+            callSendAPI(messageData);
 
 
           }
         });
->>>>>>> 41817119e0bc5a9556ea1cdc8137dcd80fa8bfc2
       }
       else {
         sendHelpOptionsAsButtonTemplates(senderID);
@@ -431,14 +428,14 @@ How can I help you today?');
 
 }
 
-function sendProductsAsButton () {
+function sendProductsAsButton() {
 
 
 }
 
-function sendPhoneNumberAsButton (recepientID, phoneNumber) {
+function sendPhoneNumberAsButton(recepientID, phoneNumber) {
   console.log("[sendPhoneNumberAsButton] Sending the help options menu");
- var messageData = {
+  var messageData = {
     recipient: {
       id: recepientID
     },
@@ -447,21 +444,21 @@ function sendPhoneNumberAsButton (recepientID, phoneNumber) {
         type: "template",
         payload: {
           template_type: "button",
-          text: "Phone number is "+ phoneNumber + " . Click the button to call us",
+          text: "Phone number is " + phoneNumber + " . Click the button to call us",
           buttons: [
-        {
-          "type":"phone_number",
-          "title": phoneNumber ,
-          "payload": phoneNumber
+            {
+              "type": "phone_number",
+              "title": phoneNumber,
+              "payload": phoneNumber
+            }
+          ]
         }
-        ]
+      }
     }
-    }
-    }
-  
-    };
 
-callSendAPI(messageData);
+  };
+
+  callSendAPI(messageData);
 
 }
 
@@ -503,14 +500,14 @@ function sendHelpOptionsAsButtonTemplates(recipientId) {
  *
  */
 function handleQuickReplyResponse(event) {
-  console.log( " [handleQuickReplyResponse]", event);
+  console.log(" [handleQuickReplyResponse]", event);
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var message = event.message;
   var quickReplyPayload = message.quick_reply.payload;
 
   // console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
-    // quickReplyPayload, senderID, pageID, JSON.stringify(message));
+  // quickReplyPayload, senderID, pageID, JSON.stringify(message));
 
   // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
   respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
@@ -552,18 +549,18 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
   switch (requestPayload.action) {
     case 'QR_GET_PRODUCT_LIST':
       var products = shopify.product.list({ limit: requestPayload.limit });
-  
-      
+
+
       products.then(function (listOfProducts) {
         var prod = JSON.stringify(listOfProducts);
-      var random1 = prod[_.random(0, prod.length)];
+        var random1 = prod[_.random(0, prod.length)];
 
-    console.log(prod[0]);
-      
-        listOfProducts.forEach( (product) => {
+        console.log(prod[0]);
+
+        listOfProducts.forEach((product) => {
           // console.log(product);
           var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.handle;
+          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/" + product.handle;
           console.log(url2);
 
           templateElements.push({
@@ -623,15 +620,15 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
         });
         var prices = [];
         product.variants.forEach((products) => {
-          prices.push(products.price); 
+          prices.push(products.price);
         });
-        if ( prices.length > 0 ){
-        var price = '';
-        var newPrice = prices.every((val, i, arr) => val == arr[0]);
-        if (newPrice === true) {  price = prices[0]} else {
-          price = prices.join(', $') + "\n";
+        if (prices.length > 0) {
+          var price = '';
+          var newPrice = prices.every((val, i, arr) => val == arr[0]);
+          if (newPrice === true) { price = prices[0] } else {
+            price = prices.join(', $') + "\n";
 
-        };
+          };
         }
 
         var messageData = {
@@ -639,7 +636,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
             id: recipientId
           },
           message: {
-            text: options.substring(0, 640) + "Price is : $"+price,
+            text: options.substring(0, 640) + "Price is : $" + price,
             quick_replies: [
               textButton('Get 3 more products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
             ]
@@ -653,7 +650,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
       break;
       break;
 
-    
+
   }
 
 
