@@ -297,7 +297,7 @@ function receivedMessage(event) {
       shopify.location.list().then(
         (location) => {
           // console.log(location);
-          sendTextMessage(senderID, location[0].address1 + " " + location[0].address2 + " " + location[0].city);
+          sendTextMessage(senderID, 'We are at ' + location[0].address1 + " " + location[0].address2 + " " + location[0].city);
         });
     }
     if (intent && intent.confidence > 0.5 && intent.value == 'phone_get') {
