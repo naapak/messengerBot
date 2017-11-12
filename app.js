@@ -17,24 +17,12 @@ const
   express = require('express'),
   https = require('https'),
   request = require('request'),
-<<<<<<< HEAD
-<<<<<<< HEAD
-  Shopify = require('shopify-api-node');
-  
-
-  const _ = require('lodash');
-
-=======
   Shopify = require('shopify-api-node'),
   mongoose = require('mongoose'),
   Product = require('./models/products');
->>>>>>> master_1
-=======
-  Shopify = require('shopify-api-node'),
-  mongoose = require('mongoose'),
-  Product = require('./models/products'),
-  _ = require('lodash');
->>>>>>> master_1
+  
+
+const _ = require('lodash');
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
@@ -228,11 +216,7 @@ shopify.product.list().then(
             id: element.id,
             title: element.title,
             product_type: element.product_type,
-<<<<<<< HEAD
-            tags: element.tags,
-=======
             tags: _split(element.tags, ","),
->>>>>>> master_1
             handle: element.handle
           };
 
@@ -292,7 +276,6 @@ function receivedMessage(event) {
   console.log(messageText);
 
   if (messageText) {
-<<<<<<< HEAD
     
     var intent2 = firstEntity(message.nlp.entities.procedure[0], 'intent');
     var intent = message.nlp.entities.procedure[0]
@@ -301,9 +284,6 @@ function receivedMessage(event) {
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
-=======
-    const intent = firstEntity(message.nlp, 'intent');
->>>>>>> master_1
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => { 
@@ -316,27 +296,13 @@ function receivedMessage(event) {
         (location) => { 
           // console.log(location);
           sendPhoneNumberAsButton(senderID,location[0].phone);
-          // sendTextMessage(senderID, "Please call us at " + location[0].phone );
            });
-    }
-    if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
-      shopify.policy.list().then(
-        (url) => { 
-          console.log(url);
-       });
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
 
-<<<<<<< HEAD
-  const greetings = firstEntity(message.nlp, 'greetings');
-  if (greetings && greetings.confidence > 0.8) {
-    const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
-      var data = JSON.parse(body);
-      sendTextMessage(senderID, 'Hey ' + data.first_name);
-    });
-=======
+
     const greetings = firstEntity(message.nlp, 'greetings');
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
@@ -384,7 +350,7 @@ function receivedMessage(event) {
         sendHelpOptionsAsButtonTemplates(senderID);
       }
     }
->>>>>>> master_1
+
   }
 
   const product_get = firstEntity(message.nlp, 'product_get');
