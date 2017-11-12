@@ -276,7 +276,6 @@ function receivedMessage(event) {
   }
 
   var messageText = message.text;
-  console.log(message.nlp.entities);
   console.log(messageText);
 
   if (messageText) {
