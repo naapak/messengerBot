@@ -17,7 +17,8 @@ const
   express = require('express'),
   https = require('https'),
   request = require('request'),
-  Shopify = require('shopify-api-node');
+  Shopify = require('shopify-api-node'),
+  Mongoose = require('mongoose'),
   Product = require('./models/products');
 var app = express();
 app.set('port', process.env.PORT || 5000);
