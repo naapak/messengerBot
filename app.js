@@ -18,7 +18,7 @@ const
   https = require('https'),
   request = require('request'),
   Shopify = require('shopify-api-node'),
-  Mongoose = require('mongoose'),
+  mongoose = require('mongoose'),
   Product = require('./models/products');
 var app = express();
 app.set('port', process.env.PORT || 5000);
@@ -27,7 +27,9 @@ app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
 
+
 mongoose.connect('mongodb://kayleoss:goodboy114@ds259305.mlab.com:59305/messenger-bot');
+
 /*
  * Open config/default.json and set your config values before running this code. 
  * You can also set them using environment variables.
@@ -202,24 +204,25 @@ app.post('/webhook', function (req, res) {
 // var products_url = 'https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/products.json';
 shopify.product.list().then(
   (product_list) => {
-    product_list.products.forEach(function(element) { 
+    product_list.products.forEach(function (element) {
       var newProduct = {
         id: element.id,
         title: element.title,
         product_type: element.product_type,
         tags: element.tags,
-        handle:element.handle
-        };
+        handle: element.handle
+      };
 
-        Product.create(newProduct, function(err, newProduct){
-            if (err){
-              console.log(err);
-            }else{
-              console.log(newProduct);
-            }
-        })
-     }
-    )}
+      Product.create(newProduct, function (err, newProduct) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(newProduct);
+        }
+      })
+    }
+    )
+  }
 )
 
 
@@ -276,48 +279,48 @@ function receivedMessage(event) {
   }
 
   const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8){
-   /* Products.find({}, function(err, foundProducts){
-      if (!err){
-        console.log(err);
-      }else{
-        foundProducts.forEach(function(productName){
-          console.log(productName.title);
-          var productNames = productName.title;
-        })
-      }
-    })
-    sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-  } */ 
-  function search_product_key(messageText) {
-    var keywords = ['dress', 'pants', 'leggings'];
-    keywords.forEach(function (keys) {
+  if (product_get && product_get.confidence > 0.8) {
+    /* Products.find({}, function(err, foundProducts){
+       if (!err){
+         console.log(err);
+       }else{
+         foundProducts.forEach(function(productName){
+           console.log(productName.title);
+           var productNames = productName.title;
+         })
+       }
+     })
+     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
+   } */
+    function search_product_key(messageText) {
+      var keywords = ['dress', 'pants', 'leggings'];
+      keywords.forEach(function (keys) {
         if (messageText.search(keys) > 0) {
-            return keys;
+          return keys;
         }
-    })
-    if (keys){
-      Product.find({'product_type': keys}, function(err, foundProducts){
-        if (!err){
-          console.log(err);
-        }else{
-           /* let x = 0; 
-          if(x < foundProducts.length){
-            x++; 
-          } */
-          const sendProducts = foundProducts.forEach(function(product){
-            return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-          });
-          /* 'Products: ' 
-          + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-          + foundProducts.handle */
-          
-          sendTextMessage(senderID, sendProducts );
-        }
-      });
+      })
+      if (keys) {
+        Product.find({ 'product_type': keys }, function (err, foundProducts) {
+          if (!err) {
+            console.log(err);
+          } else {
+            /* let x = 0; 
+           if(x < foundProducts.length){
+             x++; 
+           } */
+            const sendProducts = foundProducts.forEach(function (product) {
+              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            });
+            /* 'Products: ' 
+            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+            + foundProducts.handle */
+
+            sendTextMessage(senderID, sendProducts);
+          }
+        });
+      }
     }
-}
-}
+  }
 
   //var lcm = messageText.toLowerCase();
   switch (messageText) {
