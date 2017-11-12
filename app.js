@@ -124,7 +124,7 @@ function verifyRequestSignature(req, res, buf) {
 app.get('/webhook', function (req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
     req.query['hub.verify_token'] === FB_VALIDATION_TOKEN) {
-    console.log("[app.get] Validating webhook");
+    // console.log("[app.get] Validating webhook");
     res.status(200).send(req.query['hub.challenge']);
   } else {
     console.error("Failed validation. Make sure the validation tokens match.");
@@ -138,10 +138,10 @@ app.get('/webhook', function (req, res) {
 app.get('/product_description', function (req, res) {
   var product_id = req.query['id'];
   if (product_id !== 'null') {
-    console.log("[app.get] product id:" + product_id);
+    // console.log("[app.get] product id:" + product_id);
     var sh_product = shopify.product.get(product_id);
     sh_product.then(function (product) {
-      console.log(product.options[0].values);
+      // console.log(product.options[0].values);
       res.status(200).send(product.body_html);
     }, function (error) {
       console.error("Error retrieving product");
@@ -229,7 +229,7 @@ shopify.product.list().then(
               console.log(err);
             } else {
 
-              console.log(newProduct);
+              // console.log(newProduct);
             }
           })
         }
@@ -241,6 +241,15 @@ shopify.product.list().then(
   }
 )
 
+const sectionButton = function (title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, { action: action });
+    return {
+      type: 'postback',
+      title: title,
+      payload: JSON.stringify(payload)
+    };
+  }
 
 /*
  * Message Event
@@ -251,7 +260,7 @@ shopify.product.list().then(
  * 
  */
 function receivedMessage(event) {
-  // console.log(event);
+  // console.log(event)
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
@@ -276,15 +285,14 @@ function receivedMessage(event) {
   }
 
   var messageText = message.text;
-  console.log(messageText);
 
   if (messageText) {
 
     var intent = firstEntity(message.nlp, 'intent');
 
-    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      sendHelpOptionsAsButtonTemplates(senderID);
-    }
+    // if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
+    //   sendHelpOptionsAsButtonTemplates(senderID);
+    // }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => {
@@ -304,7 +312,6 @@ function receivedMessage(event) {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
 
-
     const greetings = firstEntity(message.nlp, 'greetings');
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
@@ -317,44 +324,31 @@ How can I help you today?');
 
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      /* Products.find({}, function(err, foundProducts){
-         if (!err){
-           console.log(err);
-         }else{
-           foundProducts.forEach(function(productName){
-             console.log(productName.title);
-             var productNames = productName.title;
-           })
-         }
-       })
-       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-     } */
+  
       var keys = search_product_key(messageText);
-      console.log(keys);
-      if (keys) { //this is the changed part
+      if (keys) { 
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
-          console.log(foundProducts);
           if (err) {
             console.log(err);
           } else {
             var templateElements = [];
             const sendProducts = foundProducts.forEach(function (product) {
-              var url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-              templateElements.push({
-                title: product.title,
-                subtitle: product.tags,
-                image_url: product.image_src,
-                buttons: [
-                  // sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
-                  {
-                    "type": "web_url",
-                    "url": url,
-                    "title": "go to the webpage web Page",
-                  },
-                ]
-              });
-
-            });
+              console.log(product);
+            var  url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            templateElements.push({
+            title: product.title,
+            subtitle: product.tags.toString(),
+            image_url: product.image_src,
+            buttons: [
+              sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+              {
+                "type": "web_url",
+                "url": url,
+                "title": "View the web Page",
+              },
+            ]
+          });
+          });
 
             var messageData = {
               recipient: {
@@ -382,33 +376,52 @@ How can I help you today?');
       }
     }
 
-  }
-
-  //var lcm = messageText.toLowerCase();
-  switch (messageText) {
-    // if the text matches any special keywords, handle them accordingly
-    case 'help':
-      sendHelpOptionsAsButtonTemplates(senderID);
-      break;
-
-    default:
-      // otherwise, just echo it back to the sender
-      sendTextMessage(senderID, JSON.stringify(message));
+    }
 
   }
+  // const product_get = firstEntity(message.nlp, 'product_get');
+  // if (product_get && product_get.confidence > 0.8) {
+  //   function search_product_key(messageText) {
+  //     var keywords = ['dress', 'pants', 'leggings'];
+  //     keywords.forEach(function (keys) {
+  //       if (messageText.search(keys) > 0) {
+  //         return keys;
+  //       }
+  //     })
+  //     if (keys) {
+  //       Product.find({ 'tags': keys }, function (err, foundProducts) {
+  //         if (!err) {
+  //           console.log(err);
+  //         } else {
+  //           const sendProducts = foundProducts.forEach(function (product) {
+  //             return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+  //           });
+  //           sendTextMessage(senderID, sendProducts);
+  //         }
+  //       });
+  //     }
+  //   }
+  // }
+
+  // switch (messageText) {
+  //   // if the text matches any special keywords, handle them accordingly
+  //   case 'help':
+  //     sendHelpOptionsAsButtonTemplates(senderID);
+  //     break;
+
+  //   default:
+  //     // otherwise, just echo it back to the sender
+  //     sendTextMessage(senderID, JSON.stringify(message));
+
+  // }
+  
+
 
   //SHOP API
 
-}
-
-function sendProductsAsButton() {
-
-
-}
-
-function sendPhoneNumberAsButton(recepientID, phoneNumber) {
-  console.log("[sendPhoneNumberAsButton] Sending the help options menu");
-  var messageData = {
+function sendPhoneNumberAsButton (recepientID, phoneNumber) {
+  // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
+ var messageData = {
     recipient: {
       id: recepientID
     },
@@ -440,7 +453,7 @@ function sendPhoneNumberAsButton(recepientID, phoneNumber) {
  *
  */
 function sendHelpOptionsAsButtonTemplates(recipientId) {
-  console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
+  // console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
   var messageData = {
     recipient: {
       id: recipientId
@@ -473,7 +486,7 @@ function sendHelpOptionsAsButtonTemplates(recipientId) {
  *
  */
 function handleQuickReplyResponse(event) {
-  console.log(" [handleQuickReplyResponse]", event);
+  // console.log( " [handleQuickReplyResponse]", event);
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var message = event.message;
@@ -494,20 +507,12 @@ function handleQuickReplyResponse(event) {
  *
  */
 function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
-  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-    requestForHelpOnFeature);
+  // console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+    // requestForHelpOnFeature);
   var templateElements = [];
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
-  const sectionButton = function (title, action, options) {
-    var payload = options | {};
-    payload = Object.assign(options, { action: action });
-    return {
-      type: 'postback',
-      title: title,
-      payload: JSON.stringify(payload)
-    };
-  }
+  
 
   var textButton = function (title, action, options) {
     var payload = options | {};
@@ -530,11 +535,13 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
 
         console.log(prod[0]);
 
-        listOfProducts.forEach((product) => {
+    // console.log(prod[0]);
+      
+        listOfProducts.forEach( (product) => {
           // console.log(product);
           var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/" + product.handle;
-          console.log(url2);
+          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.handle;
+          // console.log(url2);
 
           templateElements.push({
             title: product.title,
@@ -646,12 +653,12 @@ function receivedDeliveryConfirmation(event) {
 
   if (messageIDs) {
     messageIDs.forEach(function (messageID) {
-      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
-        messageID);
+      // console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
+        // messageID);
     });
   }
 
-  console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
+  // console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
 }
 
 /*
@@ -670,8 +677,8 @@ function receivedPostback(event) {
   // button for Structured Messages. 
   var payload = event.postback.payload;
 
-  console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
-    "at (%d)", senderID, recipientID, payload, timeOfPostback);
+  // console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
+  //   "at (%d)", senderID, recipientID, payload, timeOfPostback);
 
   respondToHelpRequestWithTemplates(senderID, payload);
 }
@@ -712,11 +719,11 @@ function callSendAPI(messageData) {
       var messageId = body.message_id;
 
       if (messageId) {
-        console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
-          messageId, recipientId);
+        // console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
+        //   messageId, recipientId);
       } else {
-        console.log("[callSendAPI] Successfully called Send API for recipient %s",
-          recipientId);
+        // console.log("[callSendAPI] Successfully called Send API for recipient %s",
+        //   recipientId);
       }
     } else {
       console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
@@ -749,10 +756,10 @@ function callSendProfile() {
 
   }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      console.log("[callSendProfile]: ", body);
+      // console.log("[callSendProfile]: ", body);
       var result = body.result;
       if (result === 'success') {
-        console.log("[callSendProfile] Successfully sent profile.");
+        // console.log("[callSendProfile] Successfully sent profile.");
       } else {
         console.error("[callSendProfile] There was an error sending profile.");
       }
@@ -768,7 +775,7 @@ function callSendProfile() {
  * certificate authority.
  */
 app.listen(app.get('port'), function () {
-  console.log('[app.listen] Node app is running on port', app.get('port'));
+  // console.log('[app.listen] Node app is running on port', app.get('port'));
   callSendProfile();
 });
 
@@ -785,7 +792,7 @@ function search_product_key(messageText) {
       result.push(keys);
     }
   })
-  console.log(result);
+  // console.log(result);
   return result;
 }
 
