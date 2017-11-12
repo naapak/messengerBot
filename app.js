@@ -290,13 +290,8 @@ function receivedMessage(event) {
           // console.log(location);
           sendTextMessage(senderID, location[0].address1 +" " + location[0].address2+ " " + location[0].city ); });
     }
-    if (intent && intent.confidence > 0.5 && intent.value == 'phone_get') {
-
-      shopify.location.list().then(
-        (location) => { 
-          // console.log(location);
-          sendPhoneNumberAsButton(senderID,location[0].phone);
-           });
+    if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
+      shopify.shop.get().then(shop => {sendEmailAsButton(senderID,shop.email); sendPhoneNumberAsButton(senderID,shop.phone);});
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -442,6 +437,33 @@ function sendPhoneNumberAsButton (recepientID, phoneNumber) {
 callSendAPI(messageData);
 
 }
+
+function sendEmailAsButton (recepientID, email) {
+  console.log("[sendEmailAsButton] Sending the help options menu");
+ var messageData2 = {
+    recipient: {
+      id: recepientID
+    },
+    message: {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: "Click the button to send us an email",
+          buttons: [
+        {
+          "type":"web_url",
+          "url": email,
+          "title": email
+        }
+        ]
+    }
+    }
+    }
+  
+    };
+callSendAPI(messageData2);
+  }
 
 /*
  * Send a message with buttons.
