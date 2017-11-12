@@ -204,22 +204,34 @@ app.post('/webhook', function (req, res) {
 // var products_url = 'https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/products.json';
 shopify.product.list().then(
   (product_list) => {
-    product_list.products.forEach(function (element) {
-      var newProduct = {
-        id: element.id,
-        title: element.title,
-        product_type: element.product_type,
-        tags: element.tags,
-        handle: element.handle
-      };
-
-      Product.create(newProduct, function (err, newProduct) {
-        if (err) {
+    product_list.forEach(function (element) {
+      Product.find({'id': element.id}, function(err, found){
+        if (!err){
           console.log(err);
-        } else {
-          console.log(newProduct);
+        }else{
+              if (found){
+                console.log(found);
+              }else{
+                var newProduct = {
+                  id: element.id,
+                  title: element.title,
+                  product_type: element.product_type,
+                  tags: element.tags,
+                  handle: element.handle
+                };
+          
+                Product.create(newProduct, function (err, newProduct) {
+                  if (err) {
+                    console.log(err);
+                  } else {
+          
+                    console.log(newProduct);
+                  }
+                })
+              }
         }
       })
+      
     }
     )
   }
