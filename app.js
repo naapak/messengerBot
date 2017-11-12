@@ -216,7 +216,7 @@ shopify.product.list().then(
             id: element.id,
             title: element.title,
             product_type: element.product_type,
-            tags: _split(element.tags, ","),
+            tags: _.split(element.tags.toLowerCase(), ', '),
             handle: element.handle
           };
 
@@ -326,17 +326,15 @@ function receivedMessage(event) {
        sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
      } */
       var keys = search_product_key(messageText);
+      console.log(keys);
       if (keys) {
-        Product.find({ 'product_type': keys }, function (err, foundProducts) {
-          if (!err) {
+        Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
+          console.log(foundProducts);
+          if (err) {
             console.log(err);
           } else {
-            /* let x = 0; 
-           if(x < foundProducts.length){
-             x++; 
-           } */
             const sendProducts = foundProducts.forEach(function (product) {
-              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
             });
             /* 'Products: ' 
             + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
@@ -789,10 +787,13 @@ function firstEntity(nlp, name) {
 }
 
 function search_product_key(messageText) {
-  var keywords = ['dress', 'pants', 'leggings'];
+  var keywords = ['dress', 'pants', 'leggings', 'women'];
+  var result = []
   keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
-      return keys;
+      result.push(keys);
     }
   })
+  console.log(result);
+  return result;
 }
