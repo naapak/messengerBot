@@ -241,6 +241,15 @@ shopify.product.list().then(
   }
 )
 
+const sectionButton = function (title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, { action: action });
+    return {
+      type: 'postback',
+      title: title,
+      payload: JSON.stringify(payload)
+    };
+  }
 
 /*
  * Message Event
@@ -251,7 +260,7 @@ shopify.product.list().then(
  * 
  */
 function receivedMessage(event) {
-  // console.log(event);
+  // console.log(event)
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
@@ -285,9 +294,9 @@ function receivedMessage(event) {
     // var intent = message.nlp.entities
 
 
-    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      sendHelpOptionsAsButtonTemplates(senderID);
-    }
+    // if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
+    //   sendHelpOptionsAsButtonTemplates(senderID);
+    // }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => { 
@@ -306,7 +315,6 @@ function receivedMessage(event) {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
 
-
     const greetings = firstEntity(message.nlp, 'greetings');
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
@@ -319,23 +327,10 @@ How can I help you today?');
 
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      /* Products.find({}, function(err, foundProducts){
-         if (!err){
-           console.log(err);
-         }else{
-           foundProducts.forEach(function(productName){
-             console.log(productName.title);
-             var productNames = productName.title;
-           })
-         }
-       })
-       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-     } */
+  
       var keys = search_product_key(messageText);
-      // console.log(keys);
-      if (keys) { //this is the changed part
+      if (keys) { 
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
-          // console.log(foundProducts);
           if (err) {
             console.log(err);
           } else {
@@ -348,17 +343,15 @@ How can I help you today?');
             subtitle: product.tags.toString(),
             image_url: product.image_src,
             buttons: [
-              // sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+              sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
               {
                 "type": "web_url",
                 "url": url,
-                "title": "go to the webpage web Page",
+                "title": "View the web Page",
               },
             ]
           });
-
           });
-            // console.log(templateElements);
 
         var messageData = {
           recipient: {
@@ -386,53 +379,48 @@ How can I help you today?');
       }
     }
 
-  }
-
-  const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8) {
-    function search_product_key(messageText) {
-      var keywords = ['dress', 'pants', 'leggings'];
-      keywords.forEach(function (keys) {
-        if (messageText.search(keys) > 0) {
-          return keys;
-        }
-      })
-      if (keys) {
-        Product.find({ 'tags': keys }, function (err, foundProducts) {
-          if (!err) {
-            console.log(err);
-          } else {
-            const sendProducts = foundProducts.forEach(function (product) {
-              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            });
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
-      }
     }
-  }
-
-  //var lcm = messageText.toLowerCase();
-  switch (messageText) {
-    // if the text matches any special keywords, handle them accordingly
-    case 'help':
-      sendHelpOptionsAsButtonTemplates(senderID);
-      break;
-
-    default:
-      // otherwise, just echo it back to the sender
-      sendTextMessage(senderID, JSON.stringify(message));
 
   }
+  // const product_get = firstEntity(message.nlp, 'product_get');
+  // if (product_get && product_get.confidence > 0.8) {
+  //   function search_product_key(messageText) {
+  //     var keywords = ['dress', 'pants', 'leggings'];
+  //     keywords.forEach(function (keys) {
+  //       if (messageText.search(keys) > 0) {
+  //         return keys;
+  //       }
+  //     })
+  //     if (keys) {
+  //       Product.find({ 'tags': keys }, function (err, foundProducts) {
+  //         if (!err) {
+  //           console.log(err);
+  //         } else {
+  //           const sendProducts = foundProducts.forEach(function (product) {
+  //             return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+  //           });
+  //           sendTextMessage(senderID, sendProducts);
+  //         }
+  //       });
+  //     }
+  //   }
+  // }
+
+  // switch (messageText) {
+  //   // if the text matches any special keywords, handle them accordingly
+  //   case 'help':
+  //     sendHelpOptionsAsButtonTemplates(senderID);
+  //     break;
+
+  //   default:
+  //     // otherwise, just echo it back to the sender
+  //     sendTextMessage(senderID, JSON.stringify(message));
+
+  // }
+  
+
 
   //SHOP API
-
-}
-
-function sendProductsAsButton () {
-
-
-}
 
 function sendPhoneNumberAsButton (recepientID, phoneNumber) {
   // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
@@ -527,15 +515,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
   var templateElements = [];
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
-  const sectionButton = function (title, action, options) {
-    var payload = options | {};
-    payload = Object.assign(options, { action: action });
-    return {
-      type: 'postback',
-      title: title,
-      payload: JSON.stringify(payload)
-    };
-  }
+  
 
   var textButton = function (title, action, options) {
     var payload = options | {};
