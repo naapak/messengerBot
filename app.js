@@ -80,6 +80,7 @@ const shopify = new Shopify({
   password: SHOPIFY_API_PASSWORD
 });
 
+const product_tag_keywords = [];
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from 
@@ -206,6 +207,11 @@ app.post('/webhook', function (req, res) {
 shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
+      _.split(element.tags.toLowerCase(), ', ').forEach(function (key) {
+        if (product_tag_keywords.indexOf(key) == -1) {
+          product_tag_keywords.push(key);
+        }
+      });
       Product.find({ 'id': element.id }, function (err, found) {
         if (!found) {
           var newProduct = {
@@ -310,9 +316,6 @@ How can I help you today?');
             const sendProducts = foundProducts.forEach(function (product) {
               sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
             });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
 
             sendTextMessage(senderID, sendProducts);
           }
@@ -648,9 +651,8 @@ function firstEntity(nlp, name) {
 }
 
 function search_product_key(messageText) {
-  var keywords = ['dress', 'pants', 'leggings', 'women'];
   var result = []
-  keywords.forEach(function (keys) {
+  product_tag_keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
       result.push(keys);
     }
