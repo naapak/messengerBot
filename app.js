@@ -20,7 +20,7 @@ const
   Shopify = require('shopify-api-node'),
   mongoose = require('mongoose'),
   Product = require('./models/products');
-  
+
 
 const _ = require('lodash');
 var app = express();
@@ -82,6 +82,7 @@ const shopify = new Shopify({
   password: SHOPIFY_API_PASSWORD
 });
 
+const product_tag_keywords = [];
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from 
@@ -123,7 +124,7 @@ function verifyRequestSignature(req, res, buf) {
 app.get('/webhook', function (req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
     req.query['hub.verify_token'] === FB_VALIDATION_TOKEN) {
-    console.log("[app.get] Validating webhook");
+    // console.log("[app.get] Validating webhook");
     res.status(200).send(req.query['hub.challenge']);
   } else {
     console.error("Failed validation. Make sure the validation tokens match.");
@@ -137,10 +138,10 @@ app.get('/webhook', function (req, res) {
 app.get('/product_description', function (req, res) {
   var product_id = req.query['id'];
   if (product_id !== 'null') {
-    console.log("[app.get] product id:" + product_id);
+    // console.log("[app.get] product id:" + product_id);
     var sh_product = shopify.product.get(product_id);
     sh_product.then(function (product) {
-      console.log(product.options[0].values);
+      // console.log(product.options[0].values);
       res.status(200).send(product.body_html);
     }, function (error) {
       console.error("Error retrieving product");
@@ -176,7 +177,7 @@ app.post('/webhook', function (req, res) {
       var timeOfEvent = pageEntry.time;
 
       // iterate over each messaging event
-      pageEntry.messaging.forEach( (messagingEvent) => {
+      pageEntry.messaging.forEach((messagingEvent) => {
 
         let propertyNames = [];
         for (var prop in messagingEvent) { propertyNames.push(prop) }
@@ -207,14 +208,17 @@ app.post('/webhook', function (req, res) {
 shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
+      _.split(element.tags.toLowerCase(), ', ').forEach(function (key) {
+        if (product_tag_keywords.indexOf(key) == -1) {
+          product_tag_keywords.push(key);
+        }
+      });
       Product.find({ 'id': element.id }, function (err, found) {
-        console.log(err);
-        console.log(found);
         if (!found) {
-          console.log(found);
           var newProduct = {
             id: element.id,
             title: element.title,
+            image_src: element.images[0].src,
             product_type: element.product_type,
             tags: _.split(element.tags.toLowerCase(), ', '),
             handle: element.handle
@@ -225,7 +229,7 @@ shopify.product.list().then(
               console.log(err);
             } else {
 
-              console.log(newProduct);
+              // console.log(newProduct);
             }
           })
         }
@@ -237,6 +241,15 @@ shopify.product.list().then(
   }
 )
 
+const sectionButton = function (title, action, options) {
+    var payload = options | {};
+    payload = Object.assign(options, { action: action });
+    return {
+      type: 'postback',
+      title: title,
+      payload: JSON.stringify(payload)
+    };
+  }
 
 /*
  * Message Event
@@ -247,7 +260,7 @@ shopify.product.list().then(
  * 
  */
 function receivedMessage(event) {
-  // console.log(event);
+  // console.log(event)
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
@@ -260,36 +273,34 @@ function receivedMessage(event) {
   const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/shop.json";
 
   // console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
-    // senderID, pageID, timeOfMessage, JSON.stringify(message));
+  // senderID, pageID, timeOfMessage, JSON.stringify(message));
 
 
 
   if (message.quick_reply) {
     // console.log("[receivedMessage] quick_reply.payload (%s)",
-      // message.quick_reply.payload);
+    // message.quick_reply.payload);
     handleQuickReplyResponse(event);
     return;
   }
 
   var messageText = message.text;
-  console.log(message.nlp.entities);
-  console.log(messageText);
 
   if (messageText) {
-    
-    var intent2 = firstEntity(message.nlp.entities.procedure[0], 'intent');
-    var intent = message.nlp.entities.procedure[0]
 
+    var intent = firstEntity(message.nlp, 'intent');
 
-    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      sendHelpOptionsAsButtonTemplates(senderID);
-    }
+    // if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
+    //   sendHelpOptionsAsButtonTemplates(senderID);
+    // }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
-        (location) => { 
+        (location) => {
           // console.log(location);
-          sendTextMessage(senderID, location[0].address1 +" " + location[0].address2+ " " + location[0].city ); });
+          sendTextMessage(senderID, location[0].address1 + " " + location[0].address2 + " " + location[0].city);
+        });
     }
+    
     if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
       shopify.shop.get().then(shop => {sendEmailAsButton(senderID,shop.email); sendPhoneNumberAsButton(senderID,shop.phone);});
     }
@@ -297,45 +308,62 @@ function receivedMessage(event) {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
 
-
     const greetings = firstEntity(message.nlp, 'greetings');
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
         var data = JSON.parse(body);
-        sendTextMessage(senderID, 'Hey ' + data.first_name);
+        sendTextMessage(senderID, 'Hey ' + data.first_name + '! :) \n\
+Welcome to CandyBoxx! \nWe offer the best and brightest in fashion!👚👗👙💄💋 \n\
+How can I help you today?');
       });
     }
 
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      /* Products.find({}, function(err, foundProducts){
-         if (!err){
-           console.log(err);
-         }else{
-           foundProducts.forEach(function(productName){
-             console.log(productName.title);
-             var productNames = productName.title;
-           })
-         }
-       })
-       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-     } */
+  
       var keys = search_product_key(messageText);
-      console.log(keys);
-      if (keys) {
-        Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
-          console.log(foundProducts);
+      if (keys) { 
+        Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
           if (err) {
             console.log(err);
           } else {
+            var templateElements = [];
             const sendProducts = foundProducts.forEach(function (product) {
-              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
-            });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
+              console.log(product);
+            var  url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            templateElements.push({
+            title: product.title,
+            subtitle: product.tags.toString(),
+            image_url: product.image_src,
+            buttons: [
+              sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+              {
+                "type": "web_url",
+                "url": url,
+                "title": "View the web Page",
+              },
+            ]
+          });
+          });
 
-            sendTextMessage(senderID, sendProducts);
+            var messageData = {
+              recipient: {
+                id: senderID
+              },
+              message: {
+                attachment: {
+                  type: "template",
+                  payload: {
+                    template_type: "generic",
+                    elements: templateElements
+                  }
+                }
+              }
+            };
+
+            callSendAPI(messageData);
+
+
           }
         });
       }
@@ -344,73 +372,51 @@ function receivedMessage(event) {
       }
     }
 
-  }
-
-  const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8) {
-    /* Products.find({}, function(err, foundProducts){
-       if (!err){
-         console.log(err);
-       }else{
-         foundProducts.forEach(function(productName){
-           console.log(productName.title);
-           var productNames = productName.title;
-         })
-       }
-     })
-     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-   } */
-    function search_product_key(messageText) {
-      var keywords = ['dress', 'pants', 'leggings'];
-      keywords.forEach(function (keys) {
-        if (messageText.search(keys) > 0) {
-          return keys;
-        }
-      })
-      if (keys) {
-        Product.find({ 'product_type': keys }, function (err, foundProducts) {
-          if (!err) {
-            console.log(err);
-          } else {
-            /* let x = 0; 
-           if(x < foundProducts.length){
-             x++; 
-           } */
-            const sendProducts = foundProducts.forEach(function (product) {
-              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
-
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
-      }
     }
-  }
-
-  //var lcm = messageText.toLowerCase();
-  switch (messageText) {
-    // if the text matches any special keywords, handle them accordingly
-    case 'help':
-      sendHelpOptionsAsButtonTemplates(senderID);
-      break;
-
-    default:
-      // otherwise, just echo it back to the sender
-      sendTextMessage(senderID, JSON.stringify(message));
 
   }
+  // const product_get = firstEntity(message.nlp, 'product_get');
+  // if (product_get && product_get.confidence > 0.8) {
+  //   function search_product_key(messageText) {
+  //     var keywords = ['dress', 'pants', 'leggings'];
+  //     keywords.forEach(function (keys) {
+  //       if (messageText.search(keys) > 0) {
+  //         return keys;
+  //       }
+  //     })
+  //     if (keys) {
+  //       Product.find({ 'tags': keys }, function (err, foundProducts) {
+  //         if (!err) {
+  //           console.log(err);
+  //         } else {
+  //           const sendProducts = foundProducts.forEach(function (product) {
+  //             return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+  //           });
+  //           sendTextMessage(senderID, sendProducts);
+  //         }
+  //       });
+  //     }
+  //   }
+  // }
+
+  // switch (messageText) {
+  //   // if the text matches any special keywords, handle them accordingly
+  //   case 'help':
+  //     sendHelpOptionsAsButtonTemplates(senderID);
+  //     break;
+
+  //   default:
+  //     // otherwise, just echo it back to the sender
+  //     sendTextMessage(senderID, JSON.stringify(message));
+
+  // }
+  
+
 
   //SHOP API
 
-}
-
-
-
 function sendPhoneNumberAsButton (recepientID, phoneNumber) {
-  console.log("[sendPhoneNumberAsButton] Sending the help options menu");
+  // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
  var messageData = {
     recipient: {
       id: recepientID
@@ -420,21 +426,21 @@ function sendPhoneNumberAsButton (recepientID, phoneNumber) {
         type: "template",
         payload: {
           template_type: "button",
-          text: "Phone number is "+ phoneNumber + " . Click the button to call us",
+          text: "Phone number is " + phoneNumber + " . Click the button to call us",
           buttons: [
-        {
-          "type":"phone_number",
-          "title": phoneNumber ,
-          "payload": phoneNumber
+            {
+              "type": "phone_number",
+              "title": phoneNumber,
+              "payload": phoneNumber
+            }
+          ]
         }
-        ]
+      }
     }
-    }
-    }
-  
-    };
 
-callSendAPI(messageData);
+  };
+
+  callSendAPI(messageData);
 
 }
 
@@ -470,7 +476,7 @@ callSendAPI(messageData2);
  *
  */
 function sendHelpOptionsAsButtonTemplates(recipientId) {
-  console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
+  // console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
   var messageData = {
     recipient: {
       id: recipientId
@@ -503,14 +509,14 @@ function sendHelpOptionsAsButtonTemplates(recipientId) {
  *
  */
 function handleQuickReplyResponse(event) {
-  console.log( " [handleQuickReplyResponse]", event);
+  // console.log( " [handleQuickReplyResponse]", event);
   var senderID = event.sender.id;
   var pageID = event.recipient.id;
   var message = event.message;
   var quickReplyPayload = message.quick_reply.payload;
 
   // console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
-    // quickReplyPayload, senderID, pageID, JSON.stringify(message));
+  // quickReplyPayload, senderID, pageID, JSON.stringify(message));
 
   // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
   respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
@@ -524,20 +530,12 @@ function handleQuickReplyResponse(event) {
  *
  */
 function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
-  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-    requestForHelpOnFeature);
+  // console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+    // requestForHelpOnFeature);
   var templateElements = [];
 
   var requestPayload = JSON.parse(requestForHelpOnFeature);
-  var sectionButton = function (title, action, options) {
-    var payload = options | {};
-    payload = Object.assign(options, { action: action });
-    return {
-      type: 'postback',
-      title: title,
-      payload: JSON.stringify(payload)
-    };
-  }
+  
 
   var textButton = function (title, action, options) {
     var payload = options | {};
@@ -552,19 +550,21 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
   switch (requestPayload.action) {
     case 'QR_GET_PRODUCT_LIST':
       var products = shopify.product.list({ limit: requestPayload.limit });
-  
-      
+
+
       products.then(function (listOfProducts) {
         var prod = JSON.stringify(listOfProducts);
-      var random1 = prod[_.random(0, prod.length)];
+        var random1 = prod[_.random(0, prod.length)];
 
-    console.log(prod[0]);
+        console.log(prod[0]);
+
+    // console.log(prod[0]);
       
         listOfProducts.forEach( (product) => {
           // console.log(product);
           var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.title.replace(/\s/g,"-");
-          console.log(url2);
+          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.handle;
+          // console.log(url2);
 
           templateElements.push({
             title: product.title,
@@ -623,15 +623,15 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
         });
         var prices = [];
         product.variants.forEach((products) => {
-          prices.push(products.price); 
+          prices.push(products.price);
         });
-        if ( prices.length > 0 ){
-        var price = '';
-        var newPrice = prices.every((val, i, arr) => val == arr[0]);
-        if (newPrice === true) {  price = prices[0]} else {
-          price = prices.join(', $') + "\n";
+        if (prices.length > 0) {
+          var price = '';
+          var newPrice = prices.every((val, i, arr) => val == arr[0]);
+          if (newPrice === true) { price = prices[0] } else {
+            price = prices.join(', $') + "\n";
 
-        };
+          };
         }
 
         var messageData = {
@@ -639,7 +639,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
             id: recipientId
           },
           message: {
-            text: options.substring(0, 640) + "Price is : $"+price,
+            text: options.substring(0, 640) + "Price is : $" + price,
             quick_replies: [
               textButton('Get 3 more products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
             ]
@@ -653,7 +653,7 @@ function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature)
       break;
       break;
 
-    
+
   }
 
 
@@ -676,12 +676,12 @@ function receivedDeliveryConfirmation(event) {
 
   if (messageIDs) {
     messageIDs.forEach(function (messageID) {
-      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
-        messageID);
+      // console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
+        // messageID);
     });
   }
 
-  console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
+  // console.log("[receivedDeliveryConfirmation] All messages before timestamp %d were delivered.", watermark);
 }
 
 /*
@@ -700,8 +700,8 @@ function receivedPostback(event) {
   // button for Structured Messages. 
   var payload = event.postback.payload;
 
-  console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
-    "at (%d)", senderID, recipientID, payload, timeOfPostback);
+  // console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
+  //   "at (%d)", senderID, recipientID, payload, timeOfPostback);
 
   respondToHelpRequestWithTemplates(senderID, payload);
 }
@@ -742,11 +742,11 @@ function callSendAPI(messageData) {
       var messageId = body.message_id;
 
       if (messageId) {
-        console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
-          messageId, recipientId);
+        // console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
+        //   messageId, recipientId);
       } else {
-        console.log("[callSendAPI] Successfully called Send API for recipient %s",
-          recipientId);
+        // console.log("[callSendAPI] Successfully called Send API for recipient %s",
+        //   recipientId);
       }
     } else {
       console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
@@ -779,10 +779,10 @@ function callSendProfile() {
 
   }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      console.log("[callSendProfile]: ", body);
+      // console.log("[callSendProfile]: ", body);
       var result = body.result;
       if (result === 'success') {
-        console.log("[callSendProfile] Successfully sent profile.");
+        // console.log("[callSendProfile] Successfully sent profile.");
       } else {
         console.error("[callSendProfile] There was an error sending profile.");
       }
@@ -798,7 +798,7 @@ function callSendProfile() {
  * certificate authority.
  */
 app.listen(app.get('port'), function () {
-  console.log('[app.listen] Node app is running on port', app.get('port'));
+  // console.log('[app.listen] Node app is running on port', app.get('port'));
   callSendProfile();
 });
 
@@ -809,13 +809,36 @@ function firstEntity(nlp, name) {
 }
 
 function search_product_key(messageText) {
-  var keywords = ['dress', 'pants', 'leggings', 'women'];
   var result = []
-  keywords.forEach(function (keys) {
+  product_tag_keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
       result.push(keys);
     }
   })
-  console.log(result);
+  // console.log(result);
   return result;
+}
+
+function find_products(keys) {
+  Product.find({ 'tags': { $all: keys } }, null, { limit: 5 }, function (err, found_complete_Products) {
+    if (!err) {
+      const sendProducts = found_complete_Products.forEach(function (product) {
+        sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
+      });
+    }
+    else {
+      Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, found_partial_Products) {
+        console.log(found_partial_Products);
+        if (err) {
+          console.log(err);
+        } else {
+          const sendProducts = found_partial_Products.forEach(function (product) {
+            sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
+          });
+
+          sendTextMessage(senderID, sendProducts);
+        }
+      });
+    }
+  });
 }
