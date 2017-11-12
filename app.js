@@ -27,7 +27,7 @@ app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
 
-mongoose.connect('mongodb://kayleoss:goodboy114@ds245755.mlab.com:45755/messenger-bot')
+mongoose.connect('mongodb://kayleoss:goodboy114@ds259305.mlab.com:59305/messenger-bot');
 /*
  * Open config/default.json and set your config values before running this code. 
  * You can also set them using environment variables.
