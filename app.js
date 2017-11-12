@@ -278,7 +278,9 @@ function receivedMessage(event) {
     if (greetings && greetings.confidence > 0.8) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
         var data = JSON.parse(body);
-        sendTextMessage(senderID, 'Hey ' + data.first_name);
+        sendTextMessage(senderID, 'Hey ' + data.first_name + '! :) \n\
+Welcome to CandyBoxx! \nWe offer the best and brightest in fashion!👚👗👙💄💋 \n\
+How can I help you today?');
       });
     }
 
