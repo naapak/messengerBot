@@ -80,6 +80,8 @@ const shopify = new Shopify({
   password: SHOPIFY_API_PASSWORD
 });
 
+const tag_keywords = [];
+
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from 
@@ -206,6 +208,11 @@ app.post('/webhook', function (req, res) {
 shopify.product.list().then(
   (product_list) => {
     product_list.forEach(function (element) {
+      _.split(element.tags.toLowerCase(), ', ').forEach(function (element) {
+        if (tag_keywords.indexOf(element) == -1) {
+          tag_keywords.push(element);
+        }
+      });
       Product.find({ 'id': element.id }, function (err, found) {
         console.log(err);
         console.log(found);
@@ -648,9 +655,8 @@ function firstEntity(nlp, name) {
 }
 
 function search_product_key(messageText) {
-  var keywords = ['dress', 'pants', 'leggings', 'women'];
   var result = []
-  keywords.forEach(function (keys) {
+  tag_keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
       result.push(keys);
     }
