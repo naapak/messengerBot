@@ -18,6 +18,7 @@ const
   https = require('https'),
   request = require('request'),
 <<<<<<< HEAD
+<<<<<<< HEAD
   Shopify = require('shopify-api-node');
   
 
@@ -27,6 +28,12 @@ const
   Shopify = require('shopify-api-node'),
   mongoose = require('mongoose'),
   Product = require('./models/products');
+>>>>>>> master_1
+=======
+  Shopify = require('shopify-api-node'),
+  mongoose = require('mongoose'),
+  Product = require('./models/products'),
+  _ = require('lodash');
 >>>>>>> master_1
 var app = express();
 app.set('port', process.env.PORT || 5000);
@@ -221,7 +228,11 @@ shopify.product.list().then(
             id: element.id,
             title: element.title,
             product_type: element.product_type,
+<<<<<<< HEAD
             tags: element.tags,
+=======
+            tags: _split(element.tags, ","),
+>>>>>>> master_1
             handle: element.handle
           };
 
@@ -281,6 +292,7 @@ function receivedMessage(event) {
   console.log(messageText);
 
   if (messageText) {
+<<<<<<< HEAD
     
     var intent2 = firstEntity(message.nlp.entities.procedure[0], 'intent');
     var intent = message.nlp.entities.procedure[0]
@@ -289,6 +301,9 @@ function receivedMessage(event) {
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
+=======
+    const intent = firstEntity(message.nlp, 'intent');
+>>>>>>> master_1
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => { 
@@ -313,14 +328,63 @@ function receivedMessage(event) {
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
     }
-  }
 
+<<<<<<< HEAD
   const greetings = firstEntity(message.nlp, 'greetings');
   if (greetings && greetings.confidence > 0.8) {
     const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
       var data = JSON.parse(body);
       sendTextMessage(senderID, 'Hey ' + data.first_name);
     });
+=======
+    const greetings = firstEntity(message.nlp, 'greetings');
+    if (greetings && greetings.confidence > 0.8) {
+      const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
+        var data = JSON.parse(body);
+        sendTextMessage(senderID, 'Hey ' + data.first_name);
+      });
+    }
+
+    const product_get = firstEntity(message.nlp, 'product_get');
+    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
+      /* Products.find({}, function(err, foundProducts){
+         if (!err){
+           console.log(err);
+         }else{
+           foundProducts.forEach(function(productName){
+             console.log(productName.title);
+             var productNames = productName.title;
+           })
+         }
+       })
+       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
+     } */
+      var keys = search_product_key(messageText);
+      if (keys) {
+        Product.find({ 'product_type': keys }, function (err, foundProducts) {
+          if (!err) {
+            console.log(err);
+          } else {
+            /* let x = 0; 
+           if(x < foundProducts.length){
+             x++; 
+           } */
+            const sendProducts = foundProducts.forEach(function (product) {
+              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+            });
+            /* 'Products: ' 
+            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+            + foundProducts.handle */
+
+            sendTextMessage(senderID, sendProducts);
+          }
+        });
+      }
+      else {
+        sendHelpOptionsAsButtonTemplates(senderID);
+      }
+    }
+>>>>>>> master_1
   }
 
   const product_get = firstEntity(message.nlp, 'product_get');
@@ -756,4 +820,13 @@ module.exports = app;
 
 function firstEntity(nlp, name) {
   return nlp && nlp.entities && nlp.entities && nlp.entities[name] && nlp.entities[name][0];
+}
+
+function search_product_key(messageText) {
+  var keywords = ['dress', 'pants', 'leggings'];
+  keywords.forEach(function (keys) {
+    if (messageText.search(keys) != -1) {
+      return keys;
+    }
+  })
 }
