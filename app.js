@@ -309,7 +309,7 @@ function receivedMessage(event) {
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) {
-        Product.find({ 'tags': { $in: keys } }, 
+        Product.find({ 'tags': { $in: keys }.limit(5) }, 
         function (err, foundProducts) {
           console.log(foundProducts);
           if (err) {
