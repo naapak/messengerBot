@@ -289,6 +289,7 @@ function receivedMessage(event) {
       const get_info = request('https://graph.facebook.com/v2.6/' + senderID + '?&access_token=' + FB_PAGE_ACCESS_TOKEN, function (error, response, body) {
         var data = JSON.parse(body);
         sendTextMessage(senderID, 'Hey ' + data.first_name);
+        sendTextMessage(senderID, 'How can I help you?');
       });
     }
 
@@ -309,22 +310,22 @@ function receivedMessage(event) {
       var keys = search_product_key(messageText);
       console.log(keys);
       if (keys) {
-        Product.find({ 'tags': { $in: keys }.limit(5) }, 
-        function (err, foundProducts) {
-          console.log(foundProducts);
-          if (err) {
-            console.log(err);
-          } else {
-            const sendProducts = foundProducts.forEach(function (product) {
-              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
-            });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
+        Product.find({ 'tags': { $in: keys }.limit(5) },
+          function (err, foundProducts) {
+            console.log(foundProducts);
+            if (err) {
+              console.log(err);
+            } else {
+              const sendProducts = foundProducts.forEach(function (product) {
+                sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
+              });
+              /* 'Products: ' 
+              + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
+              + foundProducts.handle */
 
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
+              sendTextMessage(senderID, sendProducts);
+            }
+          });
       }
       else {
         sendHelpOptionsAsButtonTemplates(senderID);
