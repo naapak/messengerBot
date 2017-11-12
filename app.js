@@ -265,11 +265,6 @@ function receivedMessage(event) {
   var pageID = event.recipient.id;
   var timeOfMessage = event.timestamp;
   var message = event.message;
-  var options = {
-    host: 'graph.facebook.com',
-    method: 'GET',
-    path: '/v2.6/' + senderID + '?fields=first_name,last_name,profile_pic&access_token=' + FB_PAGE_ACCESS_TOKEN
-  };
   const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/shop.json";
 
   // console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
@@ -290,19 +285,15 @@ function receivedMessage(event) {
 
     var intent = firstEntity(message.nlp, 'intent');
 
-    // if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-    //   sendHelpOptionsAsButtonTemplates(senderID);
-    // }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
         (location) => {
-          // console.log(location);
           sendTextMessage(senderID, 'We are at ' + location[0].address1 + " " + location[0].address2 + " " + location[0].city);
         });
     }
-    
-    if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
-      shopify.shop.get().then(shop => { sendContactAsButton(senderID,shop.phone,shop.email);});
+
+    if (intent && intent.confidence > 0.7 && intent.value == 'contact_get') {
+      shopify.shop.get().then(shop => { sendContactAsButton(senderID, shop.phone, shop.email); });
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -318,7 +309,6 @@ How can I help you today?');
       });
     }
 
-    const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
       sendTextMessage(senderID, "We have lots of products!");
       var keys = search_product_key(messageText);
@@ -370,12 +360,12 @@ How can I help you today?');
         sendHelpOptionsAsButtonTemplates(senderID);
       }
     }
-
   }
+}
 
-  //SHOP API
+//SHOP API
 
-function sendContactAsButton (recepientID, phoneNumber, email) {
+function sendContactAsButton(recepientID, phoneNumber, email) {
   // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
   var messageData = {
     recipient: {
@@ -386,7 +376,7 @@ function sendContactAsButton (recepientID, phoneNumber, email) {
         type: "template",
         payload: {
           template_type: "button",
-          text: "Out phone number is " + phoneNumber + " and our email address is " +email +" . Click the button below to call us" ,
+          text: "Out phone number is " + phoneNumber + " and our email address is " + email + " . Click the button below to call us",
           buttons: [
             {
               "type": "phone_number",
@@ -674,13 +664,6 @@ function callSendAPI(messageData) {
       var recipientId = body.recipient_id;
       var messageId = body.message_id;
 
-      if (messageId) {
-        // console.log("[callSendAPI] Successfully sent message with id %s to recipient %s",
-        //   messageId, recipientId);
-      } else {
-        // console.log("[callSendAPI] Successfully called Send API for recipient %s",
-        //   recipientId);
-      }
     } else {
       console.error("[callSendAPI] Send API call failed", response.statusCode, response.statusMessage, body.error);
     }
@@ -774,6 +757,4 @@ function find_products(keys) {
       });
     }
   });
-}
-
 }
