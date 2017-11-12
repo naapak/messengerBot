@@ -302,7 +302,7 @@ function receivedMessage(event) {
     }
     
     if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
-      shopify.shop.get().then(shop => {sendEmailAsButton(senderID,shop.email); sendPhoneNumberAsButton(senderID,shop.phone);});
+      shopify.shop.get().then(shop => { sendContactAsButton(senderID,shop.phone,shop.email);});
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -375,7 +375,7 @@ How can I help you today?');
 
   //SHOP API
 
-function sendPhoneNumberAsButton (recepientID, phoneNumber) {
+function sendContactAsButton (recepientID, phoneNumber, email) {
   // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
   var messageData = {
     recipient: {
@@ -386,7 +386,7 @@ function sendPhoneNumberAsButton (recepientID, phoneNumber) {
         type: "template",
         payload: {
           template_type: "button",
-          text: "Phone number is " + phoneNumber + " . Click the button to call us",
+          text: "Out phone number is " + phoneNumber + " and our email address is " +email +" . Click the button below to call us" ,
           buttons: [
             {
               "type": "phone_number",
@@ -403,33 +403,6 @@ function sendPhoneNumberAsButton (recepientID, phoneNumber) {
   callSendAPI(messageData);
 
 }
-
-function sendEmailAsButton (recepientID, email) {
-  console.log("[sendEmailAsButton] Sending the help options menu");
- var messageData2 = {
-    recipient: {
-      id: recepientID
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Click the button to send us an email",
-          buttons: [
-        {
-          "type":"web_url",
-          "url": email,
-          "title": email
-        }
-        ]
-    }
-    }
-    }
-  
-    };
-callSendAPI(messageData2);
-  }
 
 /*
  * Send a message with buttons.
