@@ -20,7 +20,7 @@ const
   Shopify = require('shopify-api-node'),
   mongoose = require('mongoose'),
   Product = require('./models/products');
-  
+
 
 const _ = require('lodash');
 var app = express();
@@ -176,7 +176,7 @@ app.post('/webhook', function (req, res) {
       var timeOfEvent = pageEntry.time;
 
       // iterate over each messaging event
-      pageEntry.messaging.forEach( (messagingEvent) => {
+      pageEntry.messaging.forEach((messagingEvent) => {
 
         let propertyNames = [];
         for (var prop in messagingEvent) { propertyNames.push(prop) }
@@ -268,36 +268,26 @@ function receivedMessage(event) {
   const ShopUrl = "https://52e82a861b0ca05d7541b01262a0da34:4cf5481969535398711eaba9d3b63ea0@dev-circle-toronto-hackathon.myshopify.com/admin/shop.json";
 
   // console.log("[receivedMessage] user (%d) page (%d) timestamp (%d) and message (%s)",
-    // senderID, pageID, timeOfMessage, JSON.stringify(message));
+  // senderID, pageID, timeOfMessage, JSON.stringify(message));
 
 
 
   if (message.quick_reply) {
     // console.log("[receivedMessage] quick_reply.payload (%s)",
-      // message.quick_reply.payload);
+    // message.quick_reply.payload);
     handleQuickReplyResponse(event);
     return;
   }
 
   var messageText = message.text;
-  console.log(message.nlp.entities);
-  console.log(messageText);
 
   if (messageText) {
-    
-    var intent2 = firstEntity(message.nlp.entities.procedure[0], 'intent');
-    var intent = message.nlp.entities.procedure[0]
 
+    var intent = firstEntity(message.nlp, 'intent');
 
-    if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-      sendHelpOptionsAsButtonTemplates(senderID);
-    }
     if (intent && intent.confidence > 0.8 && intent.value == 'location_get') {
       shopify.location.list().then(
-        (location) => { 
-<<<<<<< HEAD
-          // console.log(location);
-<<<<<<< HEAD
+        (location) => {
           sendTextMessage(senderID, 'We are at ' + location[0].address1 + " " + location[0].address2 + " " + location[0].city);
         });
     }
@@ -305,18 +295,13 @@ function receivedMessage(event) {
 
       shopify.location.list().then(
         (location) => {
-          // console.log(location);
+
           sendPhoneNumberAsButton(senderID, location[0].phone);
         });
-=======
-=======
-          // console.log(location);
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-          sendTextMessage(senderID, location[0].address1 +" " + location[0].address2+ " " + location[0].city ); });
     }
+
     if (intent && intent.confidence > 0.5 && intent.value == 'contact_get') {
-      shopify.shop.get().then(shop => {sendEmailAsButton(senderID,shop.email); sendPhoneNumberAsButton(senderID,shop.phone);});
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
+      shopify.shop.get().then(shop => { sendEmailAsButton(senderID, shop.email); sendPhoneNumberAsButton(senderID, shop.phone); });
     }
     if (intent && intent.confidence > 0.8 && intent.value == 'help_get') {
       sendHelpOptionsAsButtonTemplates(senderID);
@@ -333,583 +318,363 @@ function receivedMessage(event) {
 
     const product_get = firstEntity(message.nlp, 'product_get');
     if (intent && intent.confidence > 0.8 && intent.value == 'product_get') {
-<<<<<<< HEAD
-<<<<<<< HEAD
+
       sendTextMessage(senderID, "We have lots of products!");
       var keys = search_product_key(messageText);
       if (keys) {
         Product.find({ 'tags': { $in: keys } }, null, { limit: 5 }, function (err, foundProducts) {
-=======
-      /* Products.find({}, function(err, foundProducts){
-         if (!err){
-           console.log(err);
-         }else{
-           foundProducts.forEach(function(productName){
-             console.log(productName.title);
-             var productNames = productName.title;
-           })
-         }
-       })
-       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-     } */
-      var keys = search_product_key(messageText);
-=======
-      /* Products.find({}, function(err, foundProducts){
-         if (!err){
-           console.log(err);
-         }else{
-           foundProducts.forEach(function(productName){
-             console.log(productName.title);
-             var productNames = productName.title;
-           })
-         }
-       })
-       sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-     } */
-      var keys = search_product_key(messageText);
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-      console.log(keys);
-      if (keys) {
-        Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
-          console.log(foundProducts);
-<<<<<<< HEAD
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-=======
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-          if (err) {
-            console.log(err);
-          } else {
-            const sendProducts = foundProducts.forEach(function (product) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-              var url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-              templateElements.push({
-                title: product.title,
-                subtitle: product.tags.toString(),
-                image_url: product.image_src,
-                buttons: [
-                  sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
-                  {
-                    "type": "web_url",
-                    "url": url,
-                    "title": "View the web Page",
+          var keys = search_product_key(messageText);
+          console.log(keys);
+          if (keys) {
+            Product.find({ 'tags': { $in: keys } }, function (err, foundProducts) {
+              console.log(foundProducts);
+              if (err) {
+                console.log(err);
+              } else {
+                const sendProducts = foundProducts.forEach(function (product) {
+                  var url = 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
+                  var templateElements = [];
+                  templateElements.push({
+                    title: product.title,
+                    subtitle: product.tags.toString(),
+                    image_url: product.image_src,
+                    buttons: [
+                      sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+                      {
+                        "type": "web_url",
+                        "url": url,
+                        "title": "View the web Page",
+                      },
+                    ]
+                  });
+                });
+
+                var messageData = {
+                  recipient: {
+                    id: senderID
                   },
-                ]
-              });
-            });
-
-            var messageData = {
-              recipient: {
-                id: senderID
-              },
-              message: {
-                attachment: {
-                  type: "template",
-                  payload: {
-                    template_type: "generic",
-                    elements: templateElements
+                  message: {
+                    attachment: {
+                      type: "template",
+                      payload: {
+                        template_type: "generic",
+                        elements: templateElements
+                      }
+                    }
                   }
-                }
+                };
+
+                callSendAPI(messageData);
+                sendTextMessage(senderID, sendProducts);
               }
-            };
-
-            callSendAPI(messageData);
-
-=======
-=======
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-              sendTextMessage(senderID, 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle);
             });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
-<<<<<<< HEAD
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-=======
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-
-            sendTextMessage(senderID, sendProducts);
           }
-        });
+          else {
+            sendHelpOptionsAsButtonTemplates(senderID);
+          }
+        }
+        )
       }
-      else {
+    }
+
+
+  }
+
+  function sendPhoneNumberAsButton(recepientID, phoneNumber) {
+    // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
+    var messageData = {
+      //var lcm = messageText.toLowerCase();
+      switch(messageText) {
+        sendTextMessage(senderID, JSON.stringify(message));
+
+      }
+    }
+
+
+    //var lcm = messageText.toLowerCase();
+    switch (messageText) {
+      // if the text matches any special keywords, handle them accordingly
+      case 'help':
         sendHelpOptionsAsButtonTemplates(senderID);
-      }
+        break;
+
+      default:
+        // otherwise, just echo it back to the sender
+        sendTextMessage(senderID, JSON.stringify(message));
+
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-  }
-
-  const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8) {
-    /* Products.find({}, function(err, foundProducts){
-       if (!err){
-         console.log(err);
-       }else{
-         foundProducts.forEach(function(productName){
-           console.log(productName.title);
-           var productNames = productName.title;
-         })
-       }
-     })
-     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-   } */
-    function search_product_key(messageText) {
-      var keywords = ['dress', 'pants', 'leggings'];
-      keywords.forEach(function (keys) {
-        if (messageText.search(keys) > 0) {
-          return keys;
-        }
-      })
-      if (keys) {
-        Product.find({ 'product_type': keys }, function (err, foundProducts) {
-          if (!err) {
-            console.log(err);
-          } else {
-            /* let x = 0; 
-           if(x < foundProducts.length){
-             x++; 
-           } */
-            const sendProducts = foundProducts.forEach(function (product) {
-              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
-
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
-      }
-    }
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-  }
-
-<<<<<<< HEAD
-}
-// const product_get = firstEntity(message.nlp, 'product_get');
-// if (product_get && product_get.confidence > 0.8) {
-//   function search_product_key(messageText) {
-//     var keywords = ['dress', 'pants', 'leggings'];
-//     keywords.forEach(function (keys) {
-//       if (messageText.search(keys) > 0) {
-//         return keys;
-//       }
-//     })
-//     if (keys) {
-//       Product.find({ 'tags': keys }, function (err, foundProducts) {
-//         if (!err) {
-//           console.log(err);
-//         } else {
-//           const sendProducts = foundProducts.forEach(function (product) {
-//             return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-//           });
-//           sendTextMessage(senderID, sendProducts);
-//         }
-//       });
-//     }
-//   }
-// }
-
-// switch (messageText) {
-//   // if the text matches any special keywords, handle them accordingly
-//   case 'help':
-//     sendHelpOptionsAsButtonTemplates(senderID);
-//     break;
-
-//   default:
-//     // otherwise, just echo it back to the sender
-//     sendTextMessage(senderID, JSON.stringify(message));
-
-// }
-
-
-
-//SHOP API
-
-function sendPhoneNumberAsButton(recepientID, phoneNumber) {
-  // console.log("[sendPhoneNumberAsButton] Sending the help options menu");
-  var messageData = {
-=======
-  //var lcm = messageText.toLowerCase();
-  switch (messageText) {
-    // if the text matches any special keywords, handle them accordingly
-    case 'help':
-      sendHelpOptionsAsButtonTemplates(senderID);
-      break;
-
-    default:
-      // otherwise, just echo it back to the sender
-      sendTextMessage(senderID, JSON.stringify(message));
+    //SHOP API
 
   }
 
-  //SHOP API
-=======
-  }
-
-  const product_get = firstEntity(message.nlp, 'product_get');
-  if (product_get && product_get.confidence > 0.8) {
-    /* Products.find({}, function(err, foundProducts){
-       if (!err){
-         console.log(err);
-       }else{
-         foundProducts.forEach(function(productName){
-           console.log(productName.title);
-           var productNames = productName.title;
-         })
-       }
-     })
-     sendTextMessage(senderID, 'Here Is What We Have: ' + productNames);
-   } */
-    function search_product_key(messageText) {
-      var keywords = ['dress', 'pants', 'leggings'];
-      keywords.forEach(function (keys) {
-        if (messageText.search(keys) > 0) {
-          return keys;
-        }
-      })
-      if (keys) {
-        Product.find({ 'product_type': keys }, function (err, foundProducts) {
-          if (!err) {
-            console.log(err);
-          } else {
-            /* let x = 0; 
-           if(x < foundProducts.length){
-             x++; 
-           } */
-            const sendProducts = foundProducts.forEach(function (product) {
-              return 'https://dev-circle-toronto-hackathon.myshopify.com/products/' + product.handle;
-            });
-            /* 'Products: ' 
-            + "https://dev-circle-toronto-hackathon.myshopify.com/products/" 
-            + foundProducts.handle */
-
-            sendTextMessage(senderID, sendProducts);
-          }
-        });
-      }
-    }
-  }
-
-  //var lcm = messageText.toLowerCase();
-  switch (messageText) {
-    // if the text matches any special keywords, handle them accordingly
-    case 'help':
-      sendHelpOptionsAsButtonTemplates(senderID);
-      break;
-
-    default:
-      // otherwise, just echo it back to the sender
-      sendTextMessage(senderID, JSON.stringify(message));
-
-  }
-
-  //SHOP API
-
-}
 
 
-
-function sendPhoneNumberAsButton (recepientID, phoneNumber) {
-  console.log("[sendPhoneNumberAsButton] Sending the help options menu");
- var messageData = {
-    recipient: {
-      id: recepientID
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Phone number is "+ phoneNumber + " . Click the button to call us",
-          buttons: [
-        {
-          "type":"phone_number",
-          "title": phoneNumber ,
-          "payload": phoneNumber
-        }
-        ]
-    }
-    }
-    }
-  
-    };
-
-callSendAPI(messageData);
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-
-}
-
-
-
-function sendPhoneNumberAsButton (recepientID, phoneNumber) {
-  console.log("[sendPhoneNumberAsButton] Sending the help options menu");
- var messageData = {
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-    recipient: {
-      id: recepientID
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Phone number is "+ phoneNumber + " . Click the button to call us",
-          buttons: [
-        {
-          "type":"phone_number",
-          "title": phoneNumber ,
-          "payload": phoneNumber
-        }
-        ]
-    }
-    }
-    }
-  
-    };
-
-callSendAPI(messageData);
-
-}
-
-/*
- * Send a message with buttons.
- *
- */
-function sendHelpOptionsAsButtonTemplates(recipientId) {
-  console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Click the button before to get a list of 5 of our products.",
-          buttons: [
-            {
-              "type": "postback",
-              "title": "Get 5 products",
-              "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 5 })
-            }
-            // limit of three buttons 
-          ]
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Someone tapped one of the Quick Reply buttons so 
- * respond with the appropriate content
- *
- */
-function handleQuickReplyResponse(event) {
-  console.log( " [handleQuickReplyResponse]", event);
-  var senderID = event.sender.id;
-  var pageID = event.recipient.id;
-  var message = event.message;
-  var quickReplyPayload = message.quick_reply.payload;
-
-  // console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
-    // quickReplyPayload, senderID, pageID, JSON.stringify(message));
-
-  // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
-  respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
-
-}
-
-/*
- * This response uses templateElements to present the user with a carousel
- * You send ALL of the content for the selected feature and they can 
- * swipe from side to side to see it
- *
- */
-function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-  // console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-  // requestForHelpOnFeature);
-  var templateElements = [];
-
-  var requestPayload = JSON.parse(requestForHelpOnFeature);
-
-=======
-  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-    requestForHelpOnFeature);
-  var templateElements = [];
-
-  var requestPayload = JSON.parse(requestForHelpOnFeature);
-=======
-  console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
-    requestForHelpOnFeature);
-  var templateElements = [];
-
-  var requestPayload = JSON.parse(requestForHelpOnFeature);
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-  var sectionButton = function (title, action, options) {
-    var payload = options | {};
-    payload = Object.assign(options, { action: action });
-    return {
-      type: 'postback',
-      title: title,
-      payload: JSON.stringify(payload)
-    };
-  }
-<<<<<<< HEAD
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-=======
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-
-  var textButton = function (title, action, options) {
-    var payload = options | {};
-    payload = Object.assign(options, { action: action });
-    return {
-      "content_type": "text",
-      title: title,
-      payload: JSON.stringify(payload)
-    };
-  }
-
-  switch (requestPayload.action) {
-    case 'QR_GET_PRODUCT_LIST':
-      var products = shopify.product.list({ limit: requestPayload.limit });
-  
-      
-      products.then(function (listOfProducts) {
-        var prod = JSON.stringify(listOfProducts);
-      var random1 = prod[_.random(0, prod.length)];
-<<<<<<< HEAD
-
-<<<<<<< HEAD
-        // console.log(prod[0]);
-
-        listOfProducts.forEach((product) => {
-          // console.log(product);
-          var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/" + product.handle;
-          // console.log(url2);
-=======
-=======
-
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-    console.log(prod[0]);
-      
-        listOfProducts.forEach( (product) => {
-          // console.log(product);
-          var url = HOST_URL + "/product.html?id=" + product.id;
-          var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/"+product.title.replace(/\s/g,"-");
-          console.log(url2);
-<<<<<<< HEAD
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-=======
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-
-          templateElements.push({
-            title: product.title,
-            subtitle: product.tags,
-            image_url: product.image.src,
+  function sendPhoneNumberAsButton(recepientID, phoneNumber) {
+    console.log("[sendPhoneNumberAsButton] Sending the help options menu");
+    var messageData = {
+      recipient: {
+        id: recepientID
+      },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: "Phone number is " + phoneNumber + " . Click the button to call us",
             buttons: [
               {
-                "type": "web_url",
-                "url": url,
-                "title": "Read description",
-                "webview_height_ratio": "compact",
-                "messenger_extensions": "true"
-              },
-              sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
-              {
-                "type": "web_url",
-                "url": url2,
-                "title": "Go to the web Page",
-              },
-
-
-            ]
-          });
-        });
-
-
-        var messageData = {
-          recipient: {
-            id: recipientId
-          },
-          message: {
-            attachment: {
-              type: "template",
-              payload: {
-                template_type: "generic",
-                elements: templateElements
+                "type": "phone_number",
+                "title": phoneNumber,
+                "payload": phoneNumber
               }
-            }
-          }
-        };
-
-        callSendAPI(messageData);
-
-      });
-
-      break;
-
-    case 'QR_GET_PRODUCT_OPTIONS':
-      var sh_product = shopify.product.get(requestPayload.id);
-      sh_product.then(function (product) {
-
-        // console.log(product);
-        var options = '';
-        product.options.map(function (option) {
-          options = options + option.name + ': ' + option.values.join(',') + "\n";
-        });
-        var prices = [];
-        product.variants.forEach((products) => {
-          prices.push(products.price); 
-        });
-        if ( prices.length > 0 ){
-        var price = '';
-        var newPrice = prices.every((val, i, arr) => val == arr[0]);
-        if (newPrice === true) {  price = prices[0]} else {
-          price = prices.join(', $') + "\n";
-
-        };
-        }
-
-        var messageData = {
-          recipient: {
-            id: recipientId
-          },
-          message: {
-            text: options.substring(0, 640) + "Price is : $"+price,
-            quick_replies: [
-              textButton('Get 3 more products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
             ]
-          },
-        };
-        callSendAPI(messageData);
-      });
+          }
+        }
+      }
 
-
-
-      break;
-      break;
-
-    
+    };
   }
 
 
+
+  function sendPhoneNumberAsButton(recepientID, phoneNumber) {
+    console.log("[sendPhoneNumberAsButton] Sending the help options menu");
+    var messageData = {
+      recipient: {
+        id: recepientID
+      },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: "Phone number is " + phoneNumber + " . Click the button to call us",
+            buttons: [
+              {
+                "type": "phone_number",
+                "title": phoneNumber,
+                "payload": phoneNumber
+              }
+            ]
+          }
+        }
+      }
+
+    };
+
+    callSendAPI(messageData);
+
+  }
+
+  /*
+   * Send a message with buttons.
+   *
+   */
+  function sendHelpOptionsAsButtonTemplates(recipientId) {
+    console.log("[sendHelpOptionsAsButtonTemplates] Sending the help options menu");
+    var messageData = {
+      recipient: {
+        id: recipientId
+      },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "button",
+            text: "Click the button before to get a list of 5 of our products.",
+            buttons: [
+              {
+                "type": "postback",
+                "title": "Get 5 products",
+                "payload": JSON.stringify({ action: 'QR_GET_PRODUCT_LIST', limit: 5 })
+              }
+              // limit of three buttons
+            ]
+          }
+        }
+      }
+    };
+
+    callSendAPI(messageData);
+  }
+
+  /*
+   * Someone tapped one of the Quick Reply buttons so
+   * respond with the appropriate content
+   *
+   */
+  function handleQuickReplyResponse(event) {
+    console.log(" [handleQuickReplyResponse]", event);
+    var senderID = event.sender.id;
+    var pageID = event.recipient.id;
+    var message = event.message;
+    var quickReplyPayload = message.quick_reply.payload;
+
+    // console.log("[handleQuickReplyResponse] Handling quick reply response (%s) from sender (%d) to page (%d) with message (%s)",
+    // quickReplyPayload, senderID, pageID, JSON.stringify(message));
+
+    // use branched conversation with one interaction per feature (each of which contains a variable number of content pieces)
+    respondToHelpRequestWithTemplates(senderID, quickReplyPayload);
+
+  }
+
+  /*
+   * This response uses templateElements to present the user with a carousel
+   * You send ALL of the content for the selected feature and they can
+   * swipe from side to side to see it
+   *
+   */
+  function respondToHelpRequestWithTemplates(recipientId, requestForHelpOnFeature) {
+    // console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+    // requestForHelpOnFeature);
+    var templateElements = [];
+
+    var requestPayload = JSON.parse(requestForHelpOnFeature);
+
+    console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+      requestForHelpOnFeature);
+    var templateElements = [];
+
+    var requestPayload = JSON.parse(requestForHelpOnFeature);
+    console.log("[respondToHelpRequestWithTemplates] handling help request for %s",
+      requestForHelpOnFeature);
+    var templateElements = [];
+
+    var requestPayload = JSON.parse(requestForHelpOnFeature);
+    var sectionButton = function (title, action, options) {
+      var payload = options | {};
+      payload = Object.assign(options, { action: action });
+      return {
+        type: 'postback',
+        title: title,
+        payload: JSON.stringify(payload)
+      };
+    }
+    var textButton = function (title, action, options) {
+      var payload = options | {};
+      payload = Object.assign(options, { action: action });
+      return {
+        "content_type": "text",
+        title: title,
+        payload: JSON.stringify(payload)
+      };
+    }
+
+    switch (requestPayload.action) {
+      case 'QR_GET_PRODUCT_LIST':
+        var products = shopify.product.list({ limit: requestPayload.limit });
+
+
+        products.then(function (listOfProducts) {
+          var prod = JSON.stringify(listOfProducts);
+          var random1 = prod[_.random(0, prod.length)];
+
+          console.log(prod[0]);
+
+          listOfProducts.forEach((product) => {
+            // console.log(product);
+            var url = HOST_URL + "/product.html?id=" + product.id;
+            var url2 = "https://dev-circle-toronto-hackathon.myshopify.com/products/" + product.title.replace(/\s/g, "-");
+            console.log(url2);
+            templateElements.push({
+              title: product.title,
+              subtitle: product.tags,
+              image_url: product.image.src,
+              buttons: [
+                {
+                  "type": "web_url",
+                  "url": url,
+                  "title": "Read description",
+                  "webview_height_ratio": "compact",
+                  "messenger_extensions": "true"
+                },
+                sectionButton('See options', 'QR_GET_PRODUCT_OPTIONS', { id: product.id }),
+                {
+                  "type": "web_url",
+                  "url": url2,
+                  "title": "Go to the web Page",
+                },
+
+
+              ]
+            });
+          });
+
+
+          var messageData = {
+            recipient: {
+              id: recipientId
+            },
+            message: {
+              attachment: {
+                type: "template",
+                payload: {
+                  template_type: "generic",
+                  elements: templateElements
+                }
+              }
+            }
+          };
+
+          callSendAPI(messageData);
+
+        });
+
+        break;
+
+      case 'QR_GET_PRODUCT_OPTIONS':
+        var sh_product = shopify.product.get(requestPayload.id);
+        sh_product.then(function (product) {
+
+          // console.log(product);
+          var options = '';
+          product.options.map(function (option) {
+            options = options + option.name + ': ' + option.values.join(',') + "\n";
+          });
+          var prices = [];
+          product.variants.forEach((products) => {
+            prices.push(products.price);
+          });
+          if (prices.length > 0) {
+            var price = '';
+            var newPrice = prices.every((val, i, arr) => val == arr[0]);
+            if (newPrice === true) { price = prices[0] } else {
+              price = prices.join(', $') + "\n";
+
+            };
+          }
+
+          var messageData = {
+            recipient: {
+              id: recipientId
+            },
+            message: {
+              text: options.substring(0, 640) + "Price is : $" + price,
+              quick_replies: [
+                textButton('Get 3 more products', 'QR_GET_PRODUCT_LIST', { limit: 3 })
+              ]
+            },
+          };
+          callSendAPI(messageData);
+        });
+
+
+
+        break;
+        break;
+
+
+    }
+
+
+  }
 }
 
 /*
  * Delivery Confirmation Event
  *
- * This event is sent to confirm the delivery of a message. Read more about 
+ * This event is sent to confirm the delivery of a message. Read more about
  * these fields at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-delivered
  *
  */
@@ -923,18 +688,9 @@ function receivedDeliveryConfirmation(event) {
 
   if (messageIDs) {
     messageIDs.forEach(function (messageID) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-      // console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
-      // messageID);
-=======
+
       console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
         messageID);
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
-=======
-      console.log("[receivedDeliveryConfirmation] Message with ID %s was delivered",
-        messageID);
->>>>>>> parent of 2540cd4... Merge branch 'master' of https://github.com/naapak/messengerBot
     });
   }
 
@@ -944,17 +700,17 @@ function receivedDeliveryConfirmation(event) {
 /*
  * Postback Event
  *
- * This event is called when a postback is tapped on a Structured Message. 
+ * This event is called when a postback is tapped on a Structured Message.
  * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
- * 
+ *
  */
 function receivedPostback(event) {
   var senderID = event.sender.id;
   var recipientID = event.recipient.id;
   var timeOfPostback = event.timestamp;
 
-  // The 'payload' param is a developer-defined field which is set in a postback 
-  // button for Structured Messages. 
+  // The 'payload' param is a developer-defined field which is set in a postback
+  // button for Structured Messages.
   var payload = event.postback.payload;
 
   console.log("[receivedPostback] from user (%d) on page (%d) with payload ('%s') " +
@@ -982,8 +738,8 @@ function sendTextMessage(recipientId, messageText) {
 }
 
 /*
- * Call the Send API. The message data goes in the body. If successful, we'll 
- * get the message id in a response 
+ * Call the Send API. The message data goes in the body. If successful, we'll
+ * get the message id in a response
  *
  */
 function callSendAPI(messageData) {
@@ -1051,7 +807,7 @@ function callSendProfile() {
 
 /*
  * Start server
- * Webhooks must be available via SSL with a certificate signed by a valid 
+ * Webhooks must be available via SSL with a certificate signed by a valid
  * certificate authority.
  */
 app.listen(app.get('port'), function () {
@@ -1067,7 +823,7 @@ function firstEntity(nlp, name) {
 
 function search_product_key(messageText) {
   var keywords = ['dress', 'pants', 'leggings', 'women'];
-  var result = []
+  var result = [];
   keywords.forEach(function (keys) {
     if (messageText.search(keys) != -1) {
       result.push(keys);
