@@ -31,7 +31,10 @@ app.use(express.static('public'));
 
 
 
-mongoose.connect('mongodb://kayleoss:goodboy114@ds259305.mlab.com:59305/messenger-bot');
+mongoose.connect('mongodb://naapak:thunders@ds259175.mlab.com:59175/messengerbot');
+
+
+
 
 /*
  * Open config/default.json and set your config values before running this code. 
@@ -83,6 +86,31 @@ const shopify = new Shopify({
 });
 
 const product_tag_keywords = [];
+
+// shopify.product.list().then(
+//     (product_list) => {
+//         product_list.forEach(function (element) {
+//           console.log(element.images[0].src);
+//             var newProduct = {
+//                 id: element.id,
+//                 title: element.title,
+//                 image_src: element.images[0].src,
+//                 product_type: element.product_type,
+//                 tags: element.tags,
+//                 handle: element.handle
+//             };
+
+//             Product.create(newProduct, function (err, newProduct) {
+//                 if (err) {
+//                     console.log(err);
+//                 } else {
+//                     console.log(newProduct);
+//                 }
+//             })
+//         }
+//         )
+//     }
+// )
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from 

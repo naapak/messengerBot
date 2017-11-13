@@ -1,10 +1,10 @@
 {
     "sh_shopName": "dev-circle-toronto-hackathon",
-    "host_url": "https://bf620500.ngrok.io", //ngrok URL here
+    "host_url": "https://eaa46bd0.ngrok.io", //ngrok URL here
     //FACEBOOK CREDENTIALS
-    "fb_appSecret": "07d3e7a54d8b40ba62e3966e8eeca154",
-    "fb_pageAccessToken": "EAACFAbvTl7wBAJPieDiAG75ZCTXxBt7jZBuS2M1ym0GeTNf35E0Me3OdZAqLks6oYGFX33IWKwowbdzZCKtATFux5Kp3rtHKPUPpI3Lsu878NzvHPV5Rzw891yyZBp5pLyYDoRg6lCqkk1SlJoZBoiziptdTcIWmCbCWApQ9XNwgZDZD",
-    "fb_validationToken": "JaxxedBot",
+    "fb_appSecret": "c84a7c2a4ac3000f4fc9fc505c8cb066",
+    "fb_pageAccessToken": "EAAZANIWbr6dkBAI5IqVqc1jLDrcXXXM3SZAtu0yArPgo8J9NkZCoc9I0k6on45kVStd663O7YDl37Q8nF5iz9cGzh5h8dom2A1avzWWuWBUdDXF0Jg9r9EhetZAI7WmEgkklTGbNUksF2ZCZBx4JYFA0ZAZBAX6RDUaIqJJg4D0rDwZDZD",
+    "fb_validationToken": "12345naresh",
     //SHOPIFY CREDENTIALS
     "sh_apiKey": "52e82a861b0ca05d7541b01262a0da34",
     "sh_apiPassword": "4cf5481969535398711eaba9d3b63ea0"
